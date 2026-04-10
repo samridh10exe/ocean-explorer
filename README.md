@@ -11,11 +11,12 @@ The full proof pack is in [`docs/feature-screenshots`](docs/feature-screenshots)
 | Intro, HUD, depth navigation | <img src="docs/feature-screenshots/01-intro-and-zone-navigation/02-sunlight-hud-depth.jpg" width="420" alt="Sunlight zone HUD and depth sidebar"> |
 | Hadal pressure atmosphere | <img src="docs/feature-screenshots/01-intro-and-zone-navigation/03-hadal-depth-pressure.jpg" width="420" alt="Hadal zone pressure and depth state"> |
 | Lifeform-only sonar returns | <img src="docs/feature-screenshots/02-sonar-lifeform-returns/02-lifeform-only-sonar-echoes.jpg" width="420" alt="Sonar returning creature echoes only"> |
-| Trivia reveal choreography | <img src="docs/feature-screenshots/03-creature-trivia-reveal/02-dramatic-reveal-choreography.jpg" width="420" alt="Creature reveal animation"> |
+| Trivia reveal choreography | <img src="docs/feature-screenshots/03-creature-trivia-reveal/02-dramatic-reveal-mid-animation.jpg" width="420" alt="Creature reveal animation"> |
 | Second chance and assisted logbook state | <img src="docs/feature-screenshots/04-wrong-answer-assisted-logbook/03-logbook-assisted-state.jpg" width="420" alt="Logbook showing assisted ID state"> |
-| Pollution cleanup counter and feedback | <img src="docs/feature-screenshots/05-pollution-cleanup/02-waste-counter-increments.jpg" width="420" alt="Waste cleared counter incrementing after pollution click"> |
+| Pollution cleanup counter and feedback | <img src="docs/feature-screenshots/05-pollution-cleanup/02-trash-pop-and-counter-increment.jpg" width="420" alt="Waste cleared counter incrementing after pollution click"> |
 | Midnight flashlight and giant squid pass | <img src="docs/feature-screenshots/06-dark-zone-flashlight-and-squid/02-giant-squid-background-pass.jpg" width="420" alt="Giant squid background pass in the Midnight zone"> |
-| Final rank and zone breakdown | <img src="docs/feature-screenshots/07-results-and-score-breakdown/01-final-rank-score.jpg" width="420" alt="Final rank and score breakdown screen"> |
+| Abyssal vs Hadal atmosphere | <img src="docs/feature-screenshots/07-abyssal-vs-hadal-atmosphere/02-hadal-green-pressure-void.jpg" width="420" alt="Hadal pressure atmosphere"> |
+| Final rank and zone breakdown | <img src="docs/feature-screenshots/08-results-and-score-breakdown/01-final-rank-score.jpg" width="420" alt="Final rank and score breakdown screen"> |
 
 ## Run locally
 
@@ -49,6 +50,7 @@ http://127.0.0.1:4173/
 - Normalized 100-point scoring across discovery, cleanup, streak, accuracy, and zone completion
 - Results screen with final rank, score stats, sonar usage, and zone-by-zone breakdown
 - Local art assets flattened into `assets/`
+- Local pollution PNG sprites in `assets/pollution/`
 - Local audio reference assets in `assets/audio/`; active ambience is generated with Web Audio so the demo is offline-safe and does not stream sound files at runtime
 
 ## Quick checklist
