@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeepDive | Ocean Depth Explorer</title>
+    <meta
+      name="description"
+      content="Descend from the ocean surface into the hadal zone, discover hidden creatures, and cleanse drifting pollution in a cinematic underwater learning experience."
+    />
+    <link
+      rel="icon"
+      href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%23010b13"/><path d="M12 34c10 0 14-9 22-9 7 0 10 7 18 7 4 0 7-2 10-4-1 11-10 20-22 20-14 0-25-11-25-25 0-2 0-4 1-6 3 10 8 17 18 17 7 0 11-4 17-4 4 0 7 2 10 4-3-8-10-14-19-14-13 0-24 9-27 21-2-2-3-5-3-7 0-12 10-22 22-22 11 0 20 7 23 17-4-3-8-5-14-5-6 0-11 3-18 3-6 0-10-2-13-7-1 2-2 4-2 6 0 4 3 8 8 8z" fill="%234cc9f0"/></svg>'
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Space+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div id="app">
+      <section id="intro-screen" class="screen is-active" aria-labelledby="intro-title">
+        <div class="intro-screen__veil"></div>
+        <div class="intro-screen__content">
+          <p class="intro-screen__eyebrow">Ocean Depth Explorer</p>
+          <h1 id="intro-title">DeepDive</h1>
+          <p class="intro-screen__lede">
+            Descend through five ocean zones, identify silhouetted creatures, restore your oxygen,
+            and clear the drifting waste clouding the deep.
+          </p>
+          <div class="intro-screen__actions">
+            <button id="start-button" class="ui-button ui-button--primary" type="button">
+              Begin Descent
+            </button>
+            <p class="intro-screen__hint">
+              Scroll, swipe, or use the arrow keys to navigate. Every reveal is scored.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <main id="game-container" class="screen" aria-hidden="true">
+        <aside id="depth-sidebar" aria-label="Depth instrumentation">
+          <div class="depth-sidebar__header">
+            <p class="instrument-label">DEPTH</p>
+            <p id="depth-readout" class="depth-readout">0 m</p>
+          </div>
+
+          <div class="depth-scale" aria-hidden="true">
+            <div id="depth-scale-marker" class="depth-scale__marker"></div>
+            <div class="depth-scale__line"></div>
+            <div class="depth-scale__label" style="top: 0%">0 m</div>
+            <div class="depth-scale__label" style="top: 18%">200 m</div>
+            <div class="depth-scale__label" style="top: 42%">1000 m</div>
+            <div class="depth-scale__label" style="top: 65%">4000 m</div>
+            <div class="depth-scale__label" style="top: 82%">6000 m</div>
+            <div class="depth-scale__label" style="top: 100%">11000 m</div>
+          </div>
+
+          <div class="o2-meter">
+            <div class="instrument-label-row">
+              <p class="instrument-label">O₂</p>
+              <p id="o2-readout" class="instrument-value">100%</p>
+            </div>
+            <div class="o2-meter__well">
+              <div id="o2-fill" class="o2-meter__fill"></div>
+            </div>
+            <p id="zone-readout" class="zone-readout">Sunlight Zone</p>
+          </div>
+        </aside>
+
+        <div id="zone-container" aria-live="polite">
+          <div id="zone-stage">
+            <section class="zone zone--sunlight" data-zone="sunlight">
+              <div class="zone__backdrop"></div>
+              <div class="zone__texture"></div>
+              <div class="zone__particles" aria-hidden="true"></div>
+              <div class="zone__content">
+                <p class="zone__eyebrow"></p>
+                <h2 class="zone__title"></h2>
+                <p class="zone__depth"></p>
+                <p class="zone__description"></p>
+              </div>
+              <div class="zone__creatures"></div>
+              <div class="zone__pollution"></div>
+              <div class="zone__vignette"></div>
+            </section>
+
+            <section class="zone zone--twilight" data-zone="twilight">
+              <div class="zone__backdrop"></div>
+              <div class="zone__texture"></div>
+              <div class="zone__particles" aria-hidden="true"></div>
+              <div class="zone__content">
+                <p class="zone__eyebrow"></p>
+                <h2 class="zone__title"></h2>
+                <p class="zone__depth"></p>
+                <p class="zone__description"></p>
+              </div>
+              <div class="zone__creatures"></div>
+              <div class="zone__pollution"></div>
+              <div class="zone__vignette"></div>
+            </section>
+
+            <section class="zone zone--midnight" data-zone="midnight">
+              <div class="zone__backdrop"></div>
+              <div class="zone__texture"></div>
+              <div class="zone__particles" aria-hidden="true"></div>
+              <div class="zone__content">
+                <p class="zone__eyebrow"></p>
+                <h2 class="zone__title"></h2>
+                <p class="zone__depth"></p>
+                <p class="zone__description"></p>
+              </div>
+              <div class="zone__creatures"></div>
+              <div class="zone__pollution"></div>
+              <div class="zone__vignette"></div>
+            </section>
+
+            <section class="zone zone--abyssal" data-zone="abyssal">
+              <div class="zone__backdrop"></div>
+              <div class="zone__texture"></div>
+              <div class="zone__particles" aria-hidden="true"></div>
+              <div class="zone__content">
+                <p class="zone__eyebrow"></p>
+                <h2 class="zone__title"></h2>
+                <p class="zone__depth"></p>
+                <p class="zone__description"></p>
+              </div>
+              <div class="zone__creatures"></div>
+              <div class="zone__pollution"></div>
+              <div class="zone__vignette"></div>
+            </section>
+
+            <section class="zone zone--hadal" data-zone="hadal">
+              <div class="zone__backdrop"></div>
+              <div class="zone__texture"></div>
+              <div class="zone__particles" aria-hidden="true"></div>
+              <div class="zone__content">
+                <p class="zone__eyebrow"></p>
+                <h2 class="zone__title"></h2>
+                <p class="zone__depth"></p>
+                <p class="zone__description"></p>
+              </div>
+              <div class="zone__creatures"></div>
+              <div class="zone__pollution"></div>
+              <div class="zone__vignette"></div>
+            </section>
+          </div>
+        </div>
+
+        <div id="hud-overlay" aria-label="Dive status">
+          <div class="hud-chip">
+            <span class="hud-chip__label">Score</span>
+            <span id="score-readout" class="hud-chip__value">0</span>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-chip__label">Waste Cleared</span>
+            <span id="pollution-readout" class="hud-chip__value">0</span>
+          </div>
+          <button id="logbook-button" class="ui-button ui-button--icon" type="button" aria-expanded="false">
+            <span class="icon icon--journal" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path
+                  d="M6 3.5h11a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H6.8a2.8 2.8 0 0 1-2.8-2.8V6.3A2.8 2.8 0 0 1 6.8 3.5H6Zm1.5 2v13H17v-13H7.5Zm1.8 2h6.1M9.3 10h6.1m-6.1 2.5h4.4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.4"
+                />
+              </svg>
+            </span>
+            <span>Logbook</span>
+          </button>
+        </div>
+
+        <section id="creature-panel" aria-live="polite" aria-label="Creature details">
+          <button id="creature-panel-close" class="panel-close" type="button" aria-label="Close creature panel">
+            ×
+          </button>
+          <div class="creature-panel__inner">
+            <p id="creature-panel-zone" class="creature-panel__zone"></p>
+            <h3 id="creature-panel-name" class="creature-panel__name"></h3>
+            <div class="creature-panel__meta">
+              <span id="creature-panel-depth"></span>
+              <span id="creature-panel-rarity"></span>
+            </div>
+            <ul id="creature-panel-facts" class="creature-panel__facts"></ul>
+          </div>
+        </section>
+
+        <aside id="logbook-panel" aria-labelledby="logbook-title" aria-hidden="true">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-heading__eyebrow">Recovered Species</p>
+              <h2 id="logbook-title">Logbook</h2>
+            </div>
+            <button id="logbook-close" class="panel-close" type="button" aria-label="Close logbook">
+              ×
+            </button>
+          </div>
+          <div id="logbook-grid" class="logbook-grid"></div>
+        </aside>
+
+        <div id="ui-overlay" class="ui-overlay" hidden></div>
+      </main>
+
+      <section id="end-screen" class="screen" aria-labelledby="end-title" hidden>
+        <div class="end-screen__veil"></div>
+        <div class="end-screen__content">
+          <p class="end-screen__eyebrow">Dive Complete</p>
+          <h2 id="end-title"></h2>
+          <p id="end-score" class="end-screen__score"></p>
+          <div id="end-breakdown" class="end-screen__breakdown"></div>
+          <div class="end-screen__actions">
+            <button id="share-button" class="ui-button ui-button--primary" type="button">
+              Copy Share Text
+            </button>
+            <button id="restart-button" class="ui-button" type="button">Dive Again</button>
+          </div>
+          <p id="share-feedback" class="share-feedback" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="trivia-modal" class="modal" aria-modal="true" role="dialog" aria-labelledby="trivia-title" hidden>
+        <div class="modal__backdrop"></div>
+        <div class="modal__panel">
+          <div class="modal__header">
+            <p id="trivia-zone" class="modal__eyebrow"></p>
+            <button id="trivia-close" class="panel-close" type="button" aria-label="Close trivia">
+              ×
+            </button>
+          </div>
+          <h2 id="trivia-title">Identify this creature</h2>
+          <p id="trivia-prompt" class="modal__prompt"></p>
+          <div id="trivia-options" class="modal__options"></div>
+          <p id="trivia-feedback" class="modal__feedback" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <p id="announcer" class="sr-only" aria-live="assertive"></p>
+    </div>
+  </body>
+</html>
