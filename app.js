@@ -11,6 +11,7 @@ const zoneData = [
     particleType: "surface",
     particleCount: 34,
     pollutionTypes: ["bottle", "bag", "line"],
+    oxygenDrainMultiplier: 0.8,
   },
   {
     id: "twilight",
@@ -24,6 +25,7 @@ const zoneData = [
     particleType: "bio",
     particleCount: 36,
     pollutionTypes: ["ghost-net", "gear", "line"],
+    oxygenDrainMultiplier: 1,
   },
   {
     id: "midnight",
@@ -37,6 +39,7 @@ const zoneData = [
     particleType: "bio",
     particleCount: 42,
     pollutionTypes: ["drum", "microplastics", "drum"],
+    oxygenDrainMultiplier: 1.28,
   },
   {
     id: "abyssal",
@@ -50,6 +53,7 @@ const zoneData = [
     particleType: "snow",
     particleCount: 54,
     pollutionTypes: ["debris", "sediment", "microplastics"],
+    oxygenDrainMultiplier: 1.52,
   },
   {
     id: "hadal",
@@ -63,6 +67,7 @@ const zoneData = [
     particleType: "snow",
     particleCount: 24,
     pollutionTypes: ["container", "oil", "container"],
+    oxygenDrainMultiplier: 1.9,
   },
 ];
 
@@ -358,6 +363,7 @@ const state = {
   score: 0,
   triviaCorrect: 0,
   pollutionCollected: 0,
+  pollutionCombo: 0,
   discovered: new Set(),
   missedCreatures: new Set(),
   zonePollutionMisses: Object.fromEntries(zoneData.map((zone) => [zone.id, 0])),
@@ -367,6 +373,8 @@ const state = {
   modalCreatureId: null,
   particleSeeded: false,
   zoneTargetIndex: 0,
+  bestDiscoveryStreak: 0,
+  discoveryStreak: 0,
 };
 
 const ui = {
@@ -522,6 +530,7 @@ function startGame() {
   setZoneImmediate(0);
   startLoop();
   activateZone(zoneData[0].id);
+  refs.startButton.blur();
   announce(`${zoneData[0].title}. Oxygen online.`);
 }
 
@@ -539,7 +548,7 @@ function startLoop() {
     ui.lastTimestamp = timestamp;
 
     if (!document.hidden && state.triviaState === "idle") {
-      const drain = delta / 3000;
+      const drain = (delta / 3000) * zoneData[state.currentZone].oxygenDrainMultiplier;
       setOxygen(state.oxygen - drain);
     }
 
@@ -622,6 +631,7 @@ function navigateToZone(nextIndex) {
   deactivateZone(zoneData[state.currentZone].id);
   state.transitionLocked = true;
   state.zoneTargetIndex = nextIndex;
+  document.body.classList.add("is-transitioning");
   refs.zoneStage.style.transform = `translate3d(0, -${nextIndex * 100}vh, 0)`;
   animateDepthReadout(state.currentDepth, zoneData[nextIndex].targetDepth, zoneData[nextIndex].depthMarker);
   setZoneVisualState(nextIndex);
@@ -633,6 +643,7 @@ function handleTransitionEnd(event) {
   }
   state.currentZone = state.zoneTargetIndex;
   state.transitionLocked = false;
+  document.body.classList.remove("is-transitioning");
   activateZone(zoneData[state.currentZone].id);
   announce(`${zoneData[state.currentZone].title}. Depth ${Math.round(state.currentDepth)} meters.`);
 }
@@ -640,6 +651,7 @@ function handleTransitionEnd(event) {
 function activateZone(zoneId) {
   const zone = zoneMap.get(zoneId);
   refs.zoneReadout.textContent = zone.title;
+  document.body.dataset.zone = zone.id;
   spawnPollution(zoneId);
   if (zoneId === "hadal") {
     refs.o2Meter.classList.add("is-warning");
@@ -750,12 +762,15 @@ function answerTrivia(choice) {
   if (correct) {
     state.discovered.add(creature.id);
     state.triviaCorrect += 1;
+    state.discoveryStreak += 1;
+    state.bestDiscoveryStreak = Math.max(state.bestDiscoveryStreak, state.discoveryStreak);
     revealCreature(creature.id);
-    setOxygen(state.oxygen + 20);
-    showCreaturePanel(creature);
+    setOxygen(state.oxygen + getOxygenReward(creature.rarity));
+    window.setTimeout(() => showCreaturePanel(creature), 240);
     announce(`${creature.name} identified.`);
   } else {
     state.missedCreatures.add(creature.id);
+    state.discoveryStreak = 0;
     markCreatureMissed(creature.id);
     hideCreaturePanel();
     announce(`${creature.name} slipped away.`);
@@ -763,7 +778,7 @@ function answerTrivia(choice) {
 
   computeScore();
   renderLogbook();
-  closeTriviaModal();
+  window.setTimeout(closeTriviaModal, 420);
 }
 
 function revealCreature(creatureId) {
@@ -771,8 +786,18 @@ function revealCreature(creatureId) {
   if (!node) {
     return;
   }
+  const zoneNode = getZoneNode(creatureMap.get(creatureId).zone);
+  node.classList.add("is-revealing");
   node.classList.add("revealed");
   node.setAttribute("aria-label", creatureMap.get(creatureId).name);
+  if (zoneNode) {
+    zoneNode.classList.add("is-reveal-burst");
+    window.setTimeout(() => zoneNode.classList.remove("is-reveal-burst"), 1300);
+  }
+  pulseElement(node, "is-spotlit", 1500);
+  window.setTimeout(() => node.classList.remove("is-revealing"), 1000);
+  pulseElement(refs.scoreReadout.closest(".hud-chip"), "is-energized", 900);
+  pulseElement(refs.o2Meter, "is-refill", 1100);
 }
 
 function markCreatureMissed(creatureId) {
@@ -781,6 +806,7 @@ function markCreatureMissed(creatureId) {
     return;
   }
   node.classList.add("missed");
+  pulseElement(getZoneNode(creatureMap.get(creatureId).zone), "is-miss-shock", 1200);
 }
 
 function showCreaturePanel(creature) {
@@ -855,9 +881,11 @@ function spawnPollution(zoneId) {
       node.classList.add("is-collected");
       state.pollutionCollected += 1;
       state.zonePollutionCollected[zoneId] += 1;
+      state.pollutionCombo += 1;
       computeScore();
       updateZonePollutionMood(zoneId);
       updateHud();
+      pulseElement(refs.pollutionReadout.closest(".hud-chip"), "is-energized", 650);
       cleanupNode();
       const nextTimeout = window.setTimeout(spawnOne, 620);
       timeouts.add(nextTimeout);
@@ -865,6 +893,7 @@ function spawnPollution(zoneId) {
 
     const handleMiss = () => {
       cleanupNode();
+      state.pollutionCombo = 0;
       state.zonePollutionMisses[zoneId] += 1;
       updateZonePollutionMood(zoneId);
       const nextTimeout = window.setTimeout(spawnOne, 900);
@@ -914,8 +943,14 @@ function computeScore() {
     (total, creatureId) => total + creatureMap.get(creatureId).points,
     0
   );
-  const pollutionBonus = Math.min(state.pollutionCollected, 10);
-  state.score = Math.min(100, creaturePoints + pollutionBonus);
+  const pollutionBonus = Math.min(state.pollutionCollected * 2, 18);
+  const streakBonus = Math.min(state.bestDiscoveryStreak * 2, 10);
+  const fullZoneBonus = zoneData.reduce((total, zone) => {
+    const zoneCreatures = creatureData.filter((creature) => creature.zone === zone.id);
+    const foundAll = zoneCreatures.every((creature) => state.discovered.has(creature.id));
+    return total + (foundAll ? 4 : 0);
+  }, 0);
+  state.score = Math.min(100, creaturePoints + pollutionBonus + streakBonus + fullZoneBonus);
   updateHud();
 }
 
@@ -924,6 +959,7 @@ function updateHud() {
   refs.pollutionReadout.textContent = String(state.pollutionCollected);
   refs.o2Readout.textContent = `${Math.max(0, Math.round(state.oxygen))}%`;
   refs.o2Fill.style.transform = `scaleY(${clamp(state.oxygen / 100, 0, 1)})`;
+  refs.o2Meter.style.setProperty("--o2-ratio", clamp(state.oxygen / 100, 0, 1).toFixed(3));
 }
 
 function setOxygen(nextValue) {
@@ -963,6 +999,7 @@ function finishDive() {
     <p>Creatures Found: ${state.discovered.size} / ${creatureData.length}</p>
     <p>Trivia Correct: ${state.triviaCorrect}</p>
     <p>Pollution Collected: ${state.pollutionCollected}</p>
+    <p>Best Discovery Chain: ${state.bestDiscoveryStreak}</p>
     <p>Oxygen Status: Surfaced at 0%</p>
   `;
   announce(`Dive complete. ${rank.title}. Final score ${state.score}.`);
@@ -976,6 +1013,7 @@ function restartGame() {
   state.score = 0;
   state.triviaCorrect = 0;
   state.pollutionCollected = 0;
+  state.pollutionCombo = 0;
   state.discovered.clear();
   state.missedCreatures.clear();
   state.zonePollutionMisses = Object.fromEntries(zoneData.map((zone) => [zone.id, 0]));
@@ -983,6 +1021,8 @@ function restartGame() {
   state.transitionLocked = false;
   state.triviaState = "idle";
   state.modalCreatureId = null;
+  state.bestDiscoveryStreak = 0;
+  state.discoveryStreak = 0;
   refs.endScreen.hidden = true;
   refs.introScreen.hidden = false;
   refs.gameContainer.classList.remove("is-active");
@@ -996,7 +1036,7 @@ function restartGame() {
   refs.shareFeedback.textContent = "";
 
   refs.zones.forEach((zoneEl) => {
-    zoneEl.classList.remove("is-polluted", "is-cleansed");
+    zoneEl.classList.remove("is-polluted", "is-cleansed", "is-reveal-burst", "is-miss-shock");
   });
 
   creatureData.forEach((creature) => {
@@ -1078,6 +1118,16 @@ function getRank(score) {
   return { title: "Deep Sea Legend", color: "#00f5d4" };
 }
 
+function getOxygenReward(rarity) {
+  if (rarity === "Legendary") {
+    return 30;
+  }
+  if (rarity === "Rare") {
+    return 24;
+  }
+  return 16;
+}
+
 function isPanelOpen() {
   return refs.logbookPanel.classList.contains("is-open");
 }
@@ -1107,6 +1157,15 @@ function easeOutCubic(value) {
   return 1 - Math.pow(1 - value, 3);
 }
 
+function pulseElement(element, className, duration) {
+  if (!element) {
+    return;
+  }
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
+  window.setTimeout(() => element.classList.remove(className), duration);
+}
 
 function announce(message) {
   refs.announcer.textContent = message;
