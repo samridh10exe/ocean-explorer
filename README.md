@@ -2,6 +2,21 @@
 
 DeepDive is a static, scroll-driven ocean depth explorer built for a hackathon. It takes the player from the surface to the hadal zone with cinematic transitions, silhouette creature reveals, trivia-based discovery, pollution cleanup, an oxygen system, a logbook, and an end-of-run rank screen.
 
+## Feature screenshots
+
+The full proof pack is in [`docs/feature-screenshots`](docs/feature-screenshots). Each feature has its own folder with multiple browser screenshots so judges can verify mechanics without relying only on the 2-minute walkthrough.
+
+| Feature | Screenshot proof |
+| --- | --- |
+| Intro, HUD, depth navigation | <img src="docs/feature-screenshots/01-intro-and-zone-navigation/02-sunlight-hud-depth.jpg" width="420" alt="Sunlight zone HUD and depth sidebar"> |
+| Hadal pressure atmosphere | <img src="docs/feature-screenshots/01-intro-and-zone-navigation/03-hadal-depth-pressure.jpg" width="420" alt="Hadal zone pressure and depth state"> |
+| Lifeform-only sonar returns | <img src="docs/feature-screenshots/02-sonar-lifeform-returns/02-lifeform-only-sonar-echoes.jpg" width="420" alt="Sonar returning creature echoes only"> |
+| Trivia reveal choreography | <img src="docs/feature-screenshots/03-creature-trivia-reveal/02-dramatic-reveal-choreography.jpg" width="420" alt="Creature reveal animation"> |
+| Second chance and assisted logbook state | <img src="docs/feature-screenshots/04-wrong-answer-assisted-logbook/03-logbook-assisted-state.jpg" width="420" alt="Logbook showing assisted ID state"> |
+| Pollution cleanup counter and feedback | <img src="docs/feature-screenshots/05-pollution-cleanup/02-waste-counter-increments.jpg" width="420" alt="Waste cleared counter incrementing after pollution click"> |
+| Midnight flashlight and giant squid pass | <img src="docs/feature-screenshots/06-dark-zone-flashlight-and-squid/02-giant-squid-background-pass.jpg" width="420" alt="Giant squid background pass in the Midnight zone"> |
+| Final rank and zone breakdown | <img src="docs/feature-screenshots/07-results-and-score-breakdown/01-final-rank-score.jpg" width="420" alt="Final rank and score breakdown screen"> |
+
 ## Run locally
 
 From the project root:
@@ -41,7 +56,7 @@ http://127.0.0.1:4173/
 - [ ] Start the dive from the intro screen
 - [ ] Move through all five zones with wheel or arrow keys
 - [ ] Press Space or click Sonar and confirm a cyan pulse plus `SONAR RETURN` HUD message
-- [ ] Confirm sonar echo rings pulse back from hidden creatures and trash, not just the center sweep
+- [ ] Confirm sonar echo rings pulse back from hidden creatures only, not pollution objects
 - [ ] Allow microphone access and blow into the mic to confirm O2 refill bubbles
 - [ ] Enter Midnight Zone and confirm the cursor flashlight turns on automatically
 - [ ] Reveal at least one creature
