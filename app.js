@@ -354,6 +354,20 @@ const pollutionPalette = {
   oil: "#5f0f40",
 };
 
+const pollutionAssetPaths = {
+  bottle: "assets/pollution/bottle.png",
+  bag: "assets/pollution/bag.png",
+  line: "assets/pollution/line.png",
+  "ghost-net": "assets/pollution/ghost-net.png",
+  gear: "assets/pollution/gear.png",
+  drum: "assets/pollution/drum.png",
+  microplastics: "assets/pollution/microplastics.png",
+  debris: "assets/pollution/debris.png",
+  sediment: "assets/pollution/sediment.png",
+  container: "assets/pollution/container.png",
+  oil: "assets/pollution/oil.png",
+};
+
 const SONAR_ACTIVE_MS = 1700;
 const SONAR_COOLDOWN_MS = 4200;
 const BREATH_THRESHOLD = 0.115;
@@ -1629,7 +1643,7 @@ function spawnPollution(zoneId) {
     node.style.setProperty("--drift", `${-8 + Math.random() * 16}vw`);
     node.style.setProperty("--spin", `${-180 + Math.random() * 360}deg`);
     node.style.setProperty("--sonar-y", `${12 + Math.random() * 76}%`);
-    node.innerHTML = `${pollutionSvg(type)}<span class="pollution-item__tag">Clean</span>`;
+    node.innerHTML = `${pollutionAsset(type)}<span class="pollution-item__tag">Clean</span>`;
 
     const handleCollect = () => {
       node.removeEventListener("click", handleCollect);
@@ -1903,6 +1917,14 @@ function createParticles(zoneEl, zone) {
     }
     layer.appendChild(particle);
   }
+}
+
+function pollutionAsset(type) {
+  const src = pollutionAssetPaths[type];
+  if (!src) {
+    return pollutionSvg(type);
+  }
+  return `<img class="pollution-item__img" src="${src}" alt="" draggable="false" />`;
 }
 
 function pollutionSvg(type) {

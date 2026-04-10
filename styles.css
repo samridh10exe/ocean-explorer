@@ -1314,10 +1314,30 @@ body.is-transitioning #zone-stage {
   will-change: transform, opacity;
 }
 
-.pollution-item svg {
+.pollution-item.is-proof-shot {
+  top: var(--proof-top, 42%);
+  left: var(--proof-left, 55%);
+  z-index: 9;
+  opacity: 0.95;
+  animation: proof-trash-float 4.6s ease-in-out infinite;
+  transform: translate3d(0, 0, 0) rotate(var(--proof-rotate, -8deg));
+}
+
+.pollution-item svg,
+.pollution-item__img {
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+.pollution-item__img {
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0 12px rgba(244, 162, 97, 0.18))
+    drop-shadow(0 8px 10px rgba(0, 0, 0, 0.3));
+}
+
+.pollution-item svg {
   fill: none;
   stroke: var(--trash-color, rgba(244, 162, 97, 0.62));
   stroke-linecap: round;
@@ -1370,7 +1390,9 @@ body.is-transitioning #zone-stage {
 }
 
 .pollution-item:hover svg,
-.pollution-item:focus-visible svg {
+.pollution-item:focus-visible svg,
+.pollution-item:hover .pollution-item__img,
+.pollution-item:focus-visible .pollution-item__img {
   filter:
     drop-shadow(0 0 10px rgba(244, 162, 97, 0.45))
     drop-shadow(0 0 20px rgba(0, 245, 212, 0.18));
@@ -2084,6 +2106,16 @@ body.is-transitioning #zone-stage {
   100% {
     opacity: 0;
     transform: translate3d(0, -1rem, 0) scale(1.4);
+  }
+}
+
+@keyframes proof-trash-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--proof-rotate, -8deg)) scale(1);
+  }
+  50% {
+    transform: translate3d(0.6rem, -0.8rem, 0) rotate(calc(var(--proof-rotate, -8deg) + 8deg)) scale(1.04);
   }
 }
 
