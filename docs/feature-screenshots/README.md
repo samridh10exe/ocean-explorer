@@ -1,0 +1,20 @@
+# DeepDive Feature Screenshot Proof
+
+These screenshots were captured from the running browser app at `1280x800`.
+
+## Folders
+
+- `01-intro-and-zone-navigation/` - intro screen, Sunlight HUD/depth sidebar, Hadal pressure/depth state.
+- `02-sonar-lifeform-returns/` - Midnight before sonar, lifeform-only sonar returns, scaled creature echo rings.
+- `03-creature-trivia-reveal/` - trivia prompt, reveal choreography, creature info panel.
+- `04-wrong-answer-assisted-logbook/` - wrong-answer feedback, assisted second attempt, assisted logbook state.
+- `05-pollution-cleanup/` - drifting trash, waste counter increment, cleansed zone feedback.
+- `06-dark-zone-flashlight-and-squid/` - automatic Midnight flashlight and giant squid background pass.
+- `07-results-and-score-breakdown/` - final rank screen and zone-by-zone score breakdown.
+
+## Verification Notes
+
+- Sonar screenshots show only creature/lifeform returns; pollution is not highlighted by sonar.
+- Pollution screenshots include a waste counter increment from a real click.
+- Wrong-answer screenshots show the educational second-chance flow instead of removing the creature.
+- Results screenshots show the score breakdown judges may not reach during a short demo.
