@@ -37,7 +37,8 @@
               Begin Descent
             </button>
             <p class="intro-screen__hint">
-              Scroll, swipe, or use the arrow keys to navigate. Every reveal is scored.
+              Scroll or use arrow keys to navigate. Press Space for sonar. Blow into your mic to refill O₂.
+              Tilt to explore on mobile.
             </p>
           </div>
         </div>
@@ -161,6 +162,27 @@
             <span class="hud-chip__label">Waste Cleared</span>
             <span id="pollution-readout" class="hud-chip__value">0</span>
           </div>
+          <div id="breath-chip" class="hud-chip hud-chip--breath">
+            <span class="hud-chip__label">Breath Mic</span>
+            <span id="breath-readout" class="hud-chip__value">Standby</span>
+          </div>
+          <button id="sonar-button" class="ui-button ui-button--sonar" type="button" aria-describedby="sonar-status">
+            <span class="icon icon--sonar" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <circle cx="12" cy="12" r="2.2" fill="currentColor" />
+                <path
+                  d="M7.8 12a4.2 4.2 0 0 1 8.4 0M4.2 12a7.8 7.8 0 0 1 15.6 0M1.5 12a10.5 10.5 0 0 1 21 0"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-width="1.4"
+                />
+              </svg>
+            </span>
+            <span>Sonar</span>
+            <span class="ui-button__key">Space</span>
+          </button>
+          <p id="sonar-status" class="sonar-status" aria-live="polite">SONAR READY</p>
           <button id="logbook-button" class="ui-button ui-button--icon" type="button" aria-expanded="false">
             <span class="icon icon--journal" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
@@ -202,6 +224,12 @@
             <button id="logbook-close" class="panel-close" type="button" aria-label="Close logbook">
               ×
             </button>
+          </div>
+          <div id="rarity-filters" class="rarity-filters" aria-label="Filter logbook by rarity">
+            <button class="rarity-filter is-active" type="button" data-rarity="all">All</button>
+            <button class="rarity-filter" type="button" data-rarity="Common">Common</button>
+            <button class="rarity-filter" type="button" data-rarity="Rare">Rare</button>
+            <button class="rarity-filter" type="button" data-rarity="Legendary">Legendary</button>
           </div>
           <div id="logbook-grid" class="logbook-grid"></div>
         </aside>

@@ -11,7 +11,7 @@ const zoneData = [
     particleType: "surface",
     particleCount: 34,
     pollutionTypes: ["bottle", "bag", "line"],
-    oxygenDrainMultiplier: 0.8,
+    oxygenDrainMultiplier: 0.72,
   },
   {
     id: "twilight",
@@ -25,7 +25,7 @@ const zoneData = [
     particleType: "bio",
     particleCount: 36,
     pollutionTypes: ["ghost-net", "gear", "line"],
-    oxygenDrainMultiplier: 1,
+    oxygenDrainMultiplier: 0.94,
   },
   {
     id: "midnight",
@@ -39,7 +39,7 @@ const zoneData = [
     particleType: "bio",
     particleCount: 42,
     pollutionTypes: ["drum", "microplastics", "drum"],
-    oxygenDrainMultiplier: 1.28,
+    oxygenDrainMultiplier: 1.18,
   },
   {
     id: "abyssal",
@@ -53,7 +53,7 @@ const zoneData = [
     particleType: "snow",
     particleCount: 54,
     pollutionTypes: ["debris", "sediment", "microplastics"],
-    oxygenDrainMultiplier: 1.52,
+    oxygenDrainMultiplier: 1.42,
   },
   {
     id: "hadal",
@@ -65,9 +65,9 @@ const zoneData = [
     description:
       "The trench is a void. The instrument stack strains, the oxygen alarm never settles, and life appears only as a ghostly interruption of the black.",
     particleType: "snow",
-    particleCount: 24,
+    particleCount: 32,
     pollutionTypes: ["container", "oil", "container"],
-    oxygenDrainMultiplier: 1.9,
+    oxygenDrainMultiplier: 1.86,
   },
 ];
 
@@ -354,6 +354,63 @@ const pollutionPalette = {
   oil: "#5f0f40",
 };
 
+const SONAR_ACTIVE_MS = 1700;
+const SONAR_COOLDOWN_MS = 4200;
+const BREATH_THRESHOLD = 0.115;
+const BREATH_HOLD_MS = 520;
+const BREATH_COOLDOWN_MS = 4600;
+const BREATH_OXYGEN_REWARD = 14;
+const ASSISTED_OXYGEN_REWARD = 6;
+const FLASHLIGHT_ZONES = new Set(["midnight", "abyssal", "hadal"]);
+
+const ambientAudioProfiles = {
+  sunlight: {
+    master: 0.18,
+    filterFrequency: 1300,
+    noise: 0.16,
+    rumble: 0.028,
+    drift: 0.03,
+    eventType: "bubble",
+    eventEvery: [2200, 4200],
+  },
+  twilight: {
+    master: 0.23,
+    filterFrequency: 920,
+    noise: 0.19,
+    rumble: 0.045,
+    drift: 0.045,
+    eventType: "bubble",
+    eventEvery: [3600, 6200],
+  },
+  midnight: {
+    master: 0.27,
+    filterFrequency: 560,
+    noise: 0.18,
+    rumble: 0.078,
+    drift: 0.055,
+    eventType: "whale",
+    eventEvery: [7600, 12800],
+  },
+  abyssal: {
+    master: 0.29,
+    filterFrequency: 380,
+    noise: 0.16,
+    rumble: 0.095,
+    drift: 0.04,
+    eventType: "pressure",
+    eventEvery: [9000, 15000],
+  },
+  hadal: {
+    master: 0.32,
+    filterFrequency: 270,
+    noise: 0.14,
+    rumble: 0.12,
+    drift: 0.035,
+    eventType: "pressure",
+    eventEvery: [6500, 11800],
+  },
+};
+
 const state = {
   started: false,
   ended: false,
@@ -365,7 +422,10 @@ const state = {
   pollutionCollected: 0,
   pollutionCombo: 0,
   discovered: new Set(),
+  seenCreatures: new Set(),
+  assistedDiscoveries: new Set(),
   missedCreatures: new Set(),
+  creatureAttempts: new Map(),
   zonePollutionMisses: Object.fromEntries(zoneData.map((zone) => [zone.id, 0])),
   zonePollutionCollected: Object.fromEntries(zoneData.map((zone) => [zone.id, 0])),
   transitionLocked: false,
@@ -375,12 +435,45 @@ const state = {
   zoneTargetIndex: 0,
   bestDiscoveryStreak: 0,
   discoveryStreak: 0,
+  logbookFilter: "all",
+  sonarCooling: false,
+  sonarReturns: 0,
+  breathCooling: false,
+  breathLevel: 0,
+  breathPeak: 0,
+  breathHoldMs: 0,
+  breathRefills: 0,
+  flashlightX: 52,
+  flashlightY: 52,
+  tiltNavigationCooling: false,
+  orientationEnabled: false,
+  audioEnabled: false,
+  squidEasterEggShown: false,
 };
 
 const ui = {
   cleanup: [],
   pollutionCleanup: new Map(),
   pollutionTimers: new Map(),
+  sonarTimers: new Set(),
+  breathStream: null,
+  breathContext: null,
+  breathAnalyser: null,
+  breathData: null,
+  breathFrame: 0,
+  lastBreathTimestamp: 0,
+  breathCooldownTimer: 0,
+  hydrophoneContext: null,
+  hydrophoneGain: null,
+  hydrophoneTimer: 0,
+  ambientFilter: null,
+  ambientNoiseGain: null,
+  ambientRumbleGain: null,
+  ambientDriftGain: null,
+  ambientNoiseSource: null,
+  ambientRumbleOsc: null,
+  ambientDriftOsc: null,
+  tiltTimer: 0,
   depthAnimationFrame: 0,
   loopFrame: 0,
   lastTimestamp: 0,
@@ -401,6 +494,10 @@ const refs = {
   zoneReadout: document.querySelector("#zone-readout"),
   scoreReadout: document.querySelector("#score-readout"),
   pollutionReadout: document.querySelector("#pollution-readout"),
+  breathChip: document.querySelector("#breath-chip"),
+  breathReadout: document.querySelector("#breath-readout"),
+  sonarButton: document.querySelector("#sonar-button"),
+  sonarStatus: document.querySelector("#sonar-status"),
   announcer: document.querySelector("#announcer"),
   triviaModal: document.querySelector("#trivia-modal"),
   triviaZone: document.querySelector("#trivia-zone"),
@@ -413,6 +510,7 @@ const refs = {
   logbookPanel: document.querySelector("#logbook-panel"),
   logbookClose: document.querySelector("#logbook-close"),
   logbookGrid: document.querySelector("#logbook-grid"),
+  rarityFilterButtons: Array.from(document.querySelectorAll(".rarity-filter")),
   creaturePanel: document.querySelector("#creature-panel"),
   creaturePanelClose: document.querySelector("#creature-panel-close"),
   creaturePanelZone: document.querySelector("#creature-panel-zone"),
@@ -449,12 +547,17 @@ function bindStaticEvents() {
   on(refs.startButton, "click", startGame);
   on(window, "wheel", handleWheel, { passive: false });
   on(window, "keydown", handleKeydown);
+  on(window, "pointermove", handlePointerMove, { passive: true });
   on(window, "touchstart", handleTouchStart, { passive: true });
   on(window, "touchend", handleTouchEnd, { passive: true });
   on(refs.zoneStage, "transitionend", handleTransitionEnd);
   on(refs.triviaClose, "click", closeTriviaModal);
+  on(refs.sonarButton, "click", triggerSonar);
   on(refs.logbookButton, "click", toggleLogbook);
   on(refs.logbookClose, "click", closeLogbook);
+  refs.rarityFilterButtons.forEach((button) => {
+    on(button, "click", () => setLogbookFilter(button.dataset.rarity));
+  });
   on(refs.creaturePanelClose, "click", hideCreaturePanel);
   on(refs.uiOverlay, "click", () => {
     closeLogbook();
@@ -499,21 +602,48 @@ function renderCreatures() {
       on(button, "click", () => handleCreatureClick(creature.id));
       layer.appendChild(button);
     });
+    if (zoneEl.dataset.zone === "midnight") {
+      renderLegendaryPass(layer);
+    }
   });
+}
+
+function renderLegendaryPass(layer) {
+  const giantSquid = creatureMap.get("giant_squid");
+  const pass = document.createElement("div");
+  pass.className = "legendary-pass";
+  pass.setAttribute("aria-hidden", "true");
+  pass.innerHTML = `<img src="${giantSquid.assetPath}" alt="" draggable="false" />`;
+  layer.appendChild(pass);
 }
 
 function renderLogbook() {
   refs.logbookGrid.innerHTML = "";
-  creatureData.forEach((creature) => {
+  refs.rarityFilterButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.rarity === state.logbookFilter);
+    button.setAttribute("aria-pressed", String(button.dataset.rarity === state.logbookFilter));
+  });
+
+  const visibleCreatures = creatureData.filter(
+    (creature) => state.logbookFilter === "all" || creature.rarity === state.logbookFilter
+  );
+
+  visibleCreatures.forEach((creature) => {
     const found = state.discovered.has(creature.id);
+    const assisted = state.assistedDiscoveries.has(creature.id);
+    const seen = state.seenCreatures.has(creature.id) || assisted;
+    const visibleName = found || seen ? creature.name : "Undiscovered";
+    const status = found ? "Profile recovered" : assisted ? "Assisted ID // no XP" : seen ? "Signal logged // retry" : "Silhouette only";
     const card = document.createElement("article");
-    card.className = `logbook-card ${found ? "is-found" : ""}`;
+    card.className = `logbook-card ${found ? "is-found" : assisted ? "is-assisted" : seen ? "is-seen" : ""}`;
+    card.dataset.rarity = creature.rarity;
     card.innerHTML = `
       <div class="logbook-card__art">
-        <img src="${creature.assetPath}" alt="${found ? creature.name : "Undiscovered creature"}" />
+        <img src="${creature.assetPath}" alt="${visibleName === "Undiscovered" ? "Undiscovered creature" : visibleName}" />
       </div>
-      <p class="logbook-card__name">${found ? creature.name : "Undiscovered"}</p>
+      <p class="logbook-card__name">${visibleName}</p>
       <p class="logbook-card__meta">${zoneMap.get(creature.zone).title} • ${creature.rarity}</p>
+      <p class="logbook-card__status">${status}</p>
     `;
     refs.logbookGrid.appendChild(card);
   });
@@ -523,6 +653,10 @@ function startGame() {
   if (state.started) {
     return;
   }
+  startBreathDetection();
+  enableOrientationInput();
+  enableHydrophoneAudio();
+  resumeAudioSystems();
   state.started = true;
   refs.introScreen.hidden = true;
   refs.gameContainer.classList.add("is-active");
@@ -563,6 +697,122 @@ function handleVisibilityChange() {
   }
 }
 
+async function startBreathDetection() {
+  if (!navigator.mediaDevices?.getUserMedia || ui.breathAnalyser) {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      refs.breathReadout.textContent = "No mic";
+      refs.breathChip.classList.add("is-muted");
+    }
+    return;
+  }
+
+  refs.breathReadout.textContent = "Request";
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      refs.breathReadout.textContent = "No audio";
+      refs.breathChip.classList.add("is-muted");
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+
+    ui.breathStream = stream;
+    ui.breathContext = new AudioContextClass();
+    const source = ui.breathContext.createMediaStreamSource(stream);
+    ui.breathAnalyser = ui.breathContext.createAnalyser();
+    ui.breathAnalyser.fftSize = 1024;
+    ui.breathAnalyser.smoothingTimeConstant = 0.68;
+    ui.breathData = new Uint8Array(ui.breathAnalyser.fftSize);
+    source.connect(ui.breathAnalyser);
+    refs.breathReadout.textContent = "Listening";
+    refs.breathChip.classList.remove("is-muted");
+    refs.breathChip.classList.add("is-listening");
+    tickBreathDetection(0);
+  } catch (error) {
+    refs.breathReadout.textContent = "Mic off";
+    refs.breathChip.classList.add("is-muted");
+  }
+}
+
+function tickBreathDetection(timestamp) {
+  if (!ui.breathAnalyser || state.ended) {
+    return;
+  }
+
+  ui.breathAnalyser.getByteTimeDomainData(ui.breathData);
+  let sumSquares = 0;
+  for (let index = 0; index < ui.breathData.length; index += 1) {
+    const normalized = (ui.breathData[index] - 128) / 128;
+    sumSquares += normalized * normalized;
+  }
+
+  const level = Math.sqrt(sumSquares / ui.breathData.length);
+  const delta = ui.lastBreathTimestamp ? timestamp - ui.lastBreathTimestamp : 16;
+  ui.lastBreathTimestamp = timestamp;
+  state.breathLevel = level;
+  state.breathPeak = Math.max(level, state.breathPeak * 0.96);
+  refs.breathChip.style.setProperty("--breath-level", clamp(level / 0.22, 0, 1).toFixed(3));
+
+  if (state.started && !document.hidden && !state.breathCooling && level > BREATH_THRESHOLD) {
+    state.breathHoldMs += delta;
+    refs.breathReadout.textContent = "Hold";
+    if (state.breathHoldMs >= BREATH_HOLD_MS) {
+      refillOxygenFromBreath();
+    }
+  } else if (!state.breathCooling) {
+    state.breathHoldMs = Math.max(0, state.breathHoldMs - delta * 1.4);
+    refs.breathReadout.textContent = level > BREATH_THRESHOLD * 0.62 ? "Signal" : "Listening";
+  }
+
+  ui.breathFrame = requestAnimationFrame(tickBreathDetection);
+}
+
+function refillOxygenFromBreath() {
+  state.breathCooling = true;
+  state.breathHoldMs = 0;
+  state.breathRefills += 1;
+  setOxygen(state.oxygen + BREATH_OXYGEN_REWARD);
+  refs.breathReadout.textContent = "Breath";
+  refs.breathChip.classList.add("is-breath-detected");
+  refs.o2Meter.classList.add("is-breath-refill");
+  renderBubbleBurst();
+  announce(`Breath detected. Oxygen refilled by ${BREATH_OXYGEN_REWARD} percent.`);
+
+  window.setTimeout(() => {
+    refs.breathChip.classList.remove("is-breath-detected");
+    refs.o2Meter.classList.remove("is-breath-refill");
+  }, 1300);
+
+  clearTimeout(ui.breathCooldownTimer);
+  ui.breathCooldownTimer = window.setTimeout(() => {
+    state.breathCooling = false;
+    refs.breathReadout.textContent = "Listening";
+  }, BREATH_COOLDOWN_MS);
+}
+
+function renderBubbleBurst() {
+  const bubbleLayer = document.createElement("div");
+  bubbleLayer.className = "o2-bubble-burst";
+  for (let index = 0; index < 16; index += 1) {
+    const bubble = document.createElement("span");
+    bubble.style.setProperty("--bubble-x", `${-1.2 + Math.random() * 2.4}rem`);
+    bubble.style.setProperty("--bubble-y", `${-1.5 - Math.random() * 5.2}rem`);
+    bubble.style.setProperty("--bubble-size", `${0.24 + Math.random() * 0.42}rem`);
+    bubble.style.setProperty("--bubble-delay", `${Math.random() * 120}ms`);
+    bubbleLayer.appendChild(bubble);
+  }
+  refs.o2Meter.appendChild(bubbleLayer);
+  const removeLayer = () => bubbleLayer.remove();
+  bubbleLayer.addEventListener("animationend", removeLayer, { once: true });
+}
+
 function handleWheel(event) {
   if (!state.started || state.ended || state.transitionLocked || state.triviaState !== "idle" || isPanelOpen()) {
     return;
@@ -594,7 +844,13 @@ function handleKeydown(event) {
     return;
   }
 
-  if (["ArrowDown", "PageDown", " "].includes(event.key)) {
+  if (event.key === " ") {
+    event.preventDefault();
+    triggerSonar();
+    return;
+  }
+
+  if (["ArrowDown", "PageDown"].includes(event.key)) {
     event.preventDefault();
     navigateToZone(state.currentZone + 1);
   }
@@ -602,6 +858,87 @@ function handleKeydown(event) {
     event.preventDefault();
     navigateToZone(state.currentZone - 1);
   }
+}
+
+function handlePointerMove(event) {
+  if (!state.started || state.ended) {
+    return;
+  }
+  updateFlashlightPosition(event.clientX, event.clientY);
+}
+
+function updateFlashlightPosition(clientX, clientY) {
+  const zoneId = zoneData[state.currentZone]?.id;
+  if (!FLASHLIGHT_ZONES.has(zoneId)) {
+    return;
+  }
+  const sidebarOffset = window.innerWidth > 900 ? 192 : 92;
+  const stageWidth = Math.max(1, window.innerWidth - sidebarOffset);
+  state.flashlightX = clamp(((clientX - sidebarOffset) / stageWidth) * 100, 0, 100);
+  state.flashlightY = clamp((clientY / window.innerHeight) * 100, 0, 100);
+  applyFlashlightPosition();
+}
+
+function applyFlashlightPosition(activeZone = refs.zones[state.currentZone]) {
+  if (!activeZone) {
+    return;
+  }
+  activeZone.style.setProperty("--spotlight-x", `${state.flashlightX}%`);
+  activeZone.style.setProperty("--spotlight-y", `${state.flashlightY}%`);
+}
+
+async function enableOrientationInput() {
+  if (!("DeviceOrientationEvent" in window)) {
+    return;
+  }
+
+  try {
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      if (permission !== "granted") {
+        return;
+      }
+    }
+    if (!state.orientationEnabled) {
+      on(window, "deviceorientation", handleDeviceOrientation, { passive: true });
+      state.orientationEnabled = true;
+    }
+  } catch (error) {
+    state.orientationEnabled = false;
+  }
+}
+
+function handleDeviceOrientation(event) {
+  if (!state.started || state.ended || state.transitionLocked || state.triviaState !== "idle" || isPanelOpen()) {
+    return;
+  }
+
+  const beta = typeof event.beta === "number" ? event.beta : 0;
+  const gamma = typeof event.gamma === "number" ? event.gamma : 0;
+  const zoneId = zoneData[state.currentZone]?.id;
+  if (FLASHLIGHT_ZONES.has(zoneId)) {
+    const nextX = 50 + gamma * 1.4;
+    const nextY = 50 + (beta - 35) * 1.05;
+    state.flashlightX = clamp(nextX, 8, 92);
+    state.flashlightY = clamp(nextY, 12, 88);
+    applyFlashlightPosition();
+  }
+
+  if (state.tiltNavigationCooling || Math.abs(beta) < 42) {
+    return;
+  }
+
+  state.tiltNavigationCooling = true;
+  if (beta > 42) {
+    navigateToZone(state.currentZone + 1);
+  } else if (beta < -42) {
+    navigateToZone(state.currentZone - 1);
+  }
+
+  clearTimeout(ui.tiltTimer);
+  ui.tiltTimer = window.setTimeout(() => {
+    state.tiltNavigationCooling = false;
+  }, 1600);
 }
 
 function handleTouchStart(event) {
@@ -660,6 +997,7 @@ function activateZone(zoneId) {
 
 function deactivateZone(zoneId) {
   clearZonePollution(zoneId);
+  clearSonarHighlights(zoneId);
 }
 
 function setZoneImmediate(index) {
@@ -677,7 +1015,226 @@ function setZoneVisualState(activeIndex) {
   refs.zones.forEach((zoneEl, index) => {
     zoneEl.classList.toggle("is-active", index === activeIndex);
     zoneEl.classList.toggle("is-hadal-alert", zoneEl.dataset.zone === "hadal" && activeIndex === 4);
+    zoneEl.classList.toggle("has-flashlight", index === activeIndex && FLASHLIGHT_ZONES.has(zoneEl.dataset.zone));
   });
+  applyFlashlightPosition(refs.zones[activeIndex]);
+  updateHydrophoneForZone(zoneData[activeIndex]?.id);
+}
+
+function enableHydrophoneAudio() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass || ui.hydrophoneContext) {
+    return;
+  }
+
+  try {
+    ui.hydrophoneContext = new AudioContextClass();
+    ui.hydrophoneGain = ui.hydrophoneContext.createGain();
+    ui.hydrophoneGain.gain.value = 0.0001;
+    ui.hydrophoneGain.connect(ui.hydrophoneContext.destination);
+    createAmbientAudioBed(ui.hydrophoneContext);
+    state.audioEnabled = true;
+  } catch (error) {
+    state.audioEnabled = false;
+  }
+}
+
+function resumeAudioSystems() {
+  if (ui.hydrophoneContext?.state === "suspended") {
+    ui.hydrophoneContext.resume().catch(() => {
+      state.audioEnabled = false;
+    });
+  }
+}
+
+function updateHydrophoneForZone(zoneId) {
+  if (!state.started || !state.audioEnabled || !ui.hydrophoneContext) {
+    return;
+  }
+
+  applyAmbientAudioProfile(zoneId);
+
+  if (zoneId === "midnight") {
+    const midnightZone = getZoneNode("midnight");
+    if (midnightZone && !state.squidEasterEggShown) {
+      state.squidEasterEggShown = true;
+      midnightZone.classList.add("is-squid-pass");
+      window.setTimeout(() => midnightZone.classList.remove("is-squid-pass"), 22000);
+    }
+  }
+  startHydrophoneLoop();
+}
+
+function startHydrophoneLoop() {
+  if (!ui.hydrophoneContext || ui.hydrophoneTimer) {
+    return;
+  }
+  if (ui.hydrophoneContext.state === "suspended") {
+    return;
+  }
+  scheduleHydrophoneClick(400);
+}
+
+function scheduleHydrophoneClick(delay) {
+  clearTimeout(ui.hydrophoneTimer);
+  ui.hydrophoneTimer = window.setTimeout(() => {
+    ui.hydrophoneTimer = 0;
+    const zoneId = zoneData[state.currentZone]?.id;
+    if (!ambientAudioProfiles[zoneId] || !state.started || state.ended) {
+      return;
+    }
+    playHydrophoneClick();
+    const [minDelay, maxDelay] = ambientAudioProfiles[zoneId].eventEvery;
+    scheduleHydrophoneClick(minDelay + Math.random() * (maxDelay - minDelay));
+  }, delay);
+}
+
+function playHydrophoneClick() {
+  const context = ui.hydrophoneContext;
+  if (!context || !ui.hydrophoneGain) {
+    return;
+  }
+
+  const profile = ambientAudioProfiles[zoneData[state.currentZone]?.id] || ambientAudioProfiles.sunlight;
+  if (profile.eventType === "bubble") {
+    playBubbleCluster(context, profile);
+    return;
+  }
+  if (profile.eventType === "pressure") {
+    playPressureCreak(context, profile);
+    return;
+  }
+  playDistantMoan(context, profile);
+}
+
+function createAmbientAudioBed(context) {
+  const noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
+  const channel = noiseBuffer.getChannelData(0);
+  let brown = 0;
+  for (let index = 0; index < channel.length; index += 1) {
+    brown = brown * 0.985 + (Math.random() * 2 - 1) * 0.015;
+    channel[index] = brown * 2.4;
+  }
+
+  ui.ambientFilter = context.createBiquadFilter();
+  ui.ambientFilter.type = "lowpass";
+  ui.ambientFilter.frequency.value = 900;
+  ui.ambientFilter.Q.value = 0.72;
+
+  ui.ambientNoiseGain = context.createGain();
+  ui.ambientNoiseGain.gain.value = 0.0001;
+  ui.ambientNoiseSource = context.createBufferSource();
+  ui.ambientNoiseSource.buffer = noiseBuffer;
+  ui.ambientNoiseSource.loop = true;
+  ui.ambientNoiseSource.connect(ui.ambientFilter);
+  ui.ambientFilter.connect(ui.ambientNoiseGain);
+  ui.ambientNoiseGain.connect(ui.hydrophoneGain);
+  ui.ambientNoiseSource.start();
+
+  ui.ambientRumbleGain = context.createGain();
+  ui.ambientRumbleGain.gain.value = 0.0001;
+  ui.ambientRumbleOsc = context.createOscillator();
+  ui.ambientRumbleOsc.type = "sine";
+  ui.ambientRumbleOsc.frequency.value = 42;
+  ui.ambientRumbleOsc.connect(ui.ambientRumbleGain);
+  ui.ambientRumbleGain.connect(ui.hydrophoneGain);
+  ui.ambientRumbleOsc.start();
+
+  ui.ambientDriftGain = context.createGain();
+  ui.ambientDriftGain.gain.value = 0.0001;
+  ui.ambientDriftOsc = context.createOscillator();
+  ui.ambientDriftOsc.type = "triangle";
+  ui.ambientDriftOsc.frequency.value = 86;
+  ui.ambientDriftOsc.connect(ui.ambientDriftGain);
+  ui.ambientDriftGain.connect(ui.hydrophoneGain);
+  ui.ambientDriftOsc.start();
+}
+
+function applyAmbientAudioProfile(zoneId) {
+  const context = ui.hydrophoneContext;
+  const profile = ambientAudioProfiles[zoneId] || ambientAudioProfiles.sunlight;
+  if (!context || !ui.hydrophoneGain || !ui.ambientFilter) {
+    return;
+  }
+
+  const now = context.currentTime;
+  rampAudioParam(ui.hydrophoneGain.gain, profile.master, now, 1.1);
+  rampAudioParam(ui.ambientFilter.frequency, profile.filterFrequency, now, 1.35);
+  rampAudioParam(ui.ambientNoiseGain.gain, profile.noise, now, 1.4);
+  rampAudioParam(ui.ambientRumbleGain.gain, profile.rumble, now, 1.4);
+  rampAudioParam(ui.ambientDriftGain.gain, profile.drift, now, 1.4);
+  rampAudioParam(ui.ambientRumbleOsc.frequency, zoneId === "hadal" ? 31 : zoneId === "abyssal" ? 36 : 43, now, 1.6);
+  rampAudioParam(ui.ambientDriftOsc.frequency, zoneId === "sunlight" ? 118 : zoneId === "twilight" ? 92 : 64, now, 1.6);
+}
+
+function playBubbleCluster(context, profile) {
+  for (let index = 0; index < 5; index += 1) {
+    const start = context.currentTime + index * 0.055 + Math.random() * 0.04;
+    const bubbleGain = context.createGain();
+    const bubble = context.createOscillator();
+    const filter = context.createBiquadFilter();
+    bubble.type = "sine";
+    bubble.frequency.setValueAtTime(180 + Math.random() * 90, start);
+    bubble.frequency.exponentialRampToValueAtTime(92 + Math.random() * 38, start + 0.42);
+    filter.type = "lowpass";
+    filter.frequency.value = profile.filterFrequency + 500;
+    bubbleGain.gain.setValueAtTime(0.0001, start);
+    bubbleGain.gain.exponentialRampToValueAtTime(0.04, start + 0.05);
+    bubbleGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.52);
+    bubble.connect(filter);
+    filter.connect(bubbleGain);
+    bubbleGain.connect(ui.hydrophoneGain);
+    bubble.start(start);
+    bubble.stop(start + 0.58);
+  }
+}
+
+function playDistantMoan(context) {
+  const now = context.currentTime;
+  const pulseGain = context.createGain();
+  const lowOsc = context.createOscillator();
+  const shimmerOsc = context.createOscillator();
+  lowOsc.type = "sine";
+  shimmerOsc.type = "sine";
+  lowOsc.frequency.setValueAtTime(92 + Math.random() * 16, now);
+  lowOsc.frequency.exponentialRampToValueAtTime(42, now + 3.4);
+  shimmerOsc.frequency.setValueAtTime(138 + Math.random() * 24, now + 0.2);
+  shimmerOsc.frequency.exponentialRampToValueAtTime(72, now + 2.4);
+  pulseGain.gain.setValueAtTime(0.0001, now);
+  pulseGain.gain.exponentialRampToValueAtTime(0.08, now + 0.8);
+  pulseGain.gain.exponentialRampToValueAtTime(0.0001, now + 4.6);
+  lowOsc.connect(pulseGain);
+  shimmerOsc.connect(pulseGain);
+  pulseGain.connect(ui.hydrophoneGain);
+  lowOsc.start(now);
+  shimmerOsc.start(now + 0.2);
+  lowOsc.stop(now + 4.8);
+  shimmerOsc.stop(now + 3.8);
+}
+
+function playPressureCreak(context) {
+  const now = context.currentTime;
+  const creakGain = context.createGain();
+  const creak = context.createOscillator();
+  const filter = context.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = zoneData[state.currentZone]?.id === "hadal" ? 240 : 360;
+  creak.type = "sawtooth";
+  creak.frequency.setValueAtTime(64 + Math.random() * 20, now);
+  creak.frequency.exponentialRampToValueAtTime(26, now + 2.2);
+  creakGain.gain.setValueAtTime(0.0001, now);
+  creakGain.gain.exponentialRampToValueAtTime(0.045, now + 0.35);
+  creakGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.7);
+  creak.connect(filter);
+  filter.connect(creakGain);
+  creakGain.connect(ui.hydrophoneGain);
+  creak.start(now);
+  creak.stop(now + 2.8);
+}
+
+function rampAudioParam(param, value, now, timeConstant) {
+  param.cancelScheduledValues(now);
+  param.setTargetAtTime(value, now, timeConstant);
 }
 
 function animateDepthReadout(from, to, markerPosition) {
@@ -701,7 +1258,7 @@ function handleCreatureClick(creatureId) {
   if (!state.started || state.ended || state.triviaState !== "idle") {
     return;
   }
-  if (state.discovered.has(creatureId) || state.missedCreatures.has(creatureId)) {
+  if (state.discovered.has(creatureId) || state.assistedDiscoveries.has(creatureId)) {
     return;
   }
   const creature = creatureMap.get(creatureId);
@@ -754,58 +1311,112 @@ function answerTrivia(choice) {
   }
   const creature = creatureMap.get(state.modalCreatureId);
   const correct = choice === creature.name;
+  const attempts = state.creatureAttempts.get(creature.id) || 0;
+  const assisted = attempts > 0 || state.seenCreatures.has(creature.id);
   state.triviaState = "answered";
 
-  refs.triviaFeedback.textContent = correct ? "Confirmed. Creature profile restored." : "Incorrect. The silhouette drifts away.";
+  refs.triviaOptions.querySelectorAll("button").forEach((button) => {
+    button.disabled = true;
+    if (button.textContent === creature.name) {
+      button.classList.add(correct ? "is-answer-correct" : "is-answer-revealed");
+    } else if (button.textContent === choice) {
+      button.classList.add("is-answer-wrong");
+    }
+  });
+
+  refs.triviaFeedback.textContent = correct
+    ? assisted
+      ? "Assisted identification restored. No creature XP awarded."
+      : "Confirmed. Creature profile restored."
+    : `Incorrect. Correct ID: ${creature.name}. Signal logged for a second attempt.`;
   refs.triviaFeedback.className = `modal__feedback ${correct ? "is-correct" : "is-wrong"}`;
 
   if (correct) {
-    state.discovered.add(creature.id);
-    state.triviaCorrect += 1;
-    state.discoveryStreak += 1;
-    state.bestDiscoveryStreak = Math.max(state.bestDiscoveryStreak, state.discoveryStreak);
-    revealCreature(creature.id);
-    setOxygen(state.oxygen + getOxygenReward(creature.rarity));
+    if (assisted) {
+      state.assistedDiscoveries.add(creature.id);
+      state.seenCreatures.add(creature.id);
+      revealCreature(creature.id, { assisted: true });
+      setOxygen(state.oxygen + ASSISTED_OXYGEN_REWARD);
+    } else {
+      state.discovered.add(creature.id);
+      state.triviaCorrect += 1;
+      state.discoveryStreak += 1;
+      state.bestDiscoveryStreak = Math.max(state.bestDiscoveryStreak, state.discoveryStreak);
+      revealCreature(creature.id);
+      setOxygen(state.oxygen + getOxygenReward(creature.rarity));
+    }
     window.setTimeout(() => showCreaturePanel(creature), 240);
-    announce(`${creature.name} identified.`);
+    announce(assisted ? `${creature.name} assisted identification restored.` : `${creature.name} identified.`);
   } else {
-    state.missedCreatures.add(creature.id);
+    state.creatureAttempts.set(creature.id, attempts + 1);
+    state.seenCreatures.add(creature.id);
     state.discoveryStreak = 0;
-    markCreatureMissed(creature.id);
+    markCreatureSeen(creature.id);
     hideCreaturePanel();
-    announce(`${creature.name} slipped away.`);
+    announce(`${creature.name} logged as unknown. Second attempt available.`);
   }
 
   computeScore();
   renderLogbook();
-  window.setTimeout(closeTriviaModal, 420);
+  window.setTimeout(closeTriviaModal, correct ? 620 : 1650);
 }
 
-function revealCreature(creatureId) {
+function revealCreature(creatureId, options = {}) {
   const node = getCreatureNode(creatureId);
   if (!node) {
     return;
   }
-  const zoneNode = getZoneNode(creatureMap.get(creatureId).zone);
+  const creature = creatureMap.get(creatureId);
+  const zoneNode = getZoneNode(creature.zone);
   node.classList.add("is-revealing");
   node.classList.add("revealed");
-  node.setAttribute("aria-label", creatureMap.get(creatureId).name);
+  node.classList.toggle("assisted", Boolean(options.assisted));
+  node.classList.remove("seen");
+  node.setAttribute("aria-label", creature.name);
   if (zoneNode) {
+    zoneNode.style.setProperty("--reveal-x", creature.position.left);
+    zoneNode.style.setProperty("--reveal-y", creature.position.top);
+    zoneNode.style.setProperty("--reveal-color", creature.bioColor);
     zoneNode.classList.add("is-reveal-burst");
-    window.setTimeout(() => zoneNode.classList.remove("is-reveal-burst"), 1300);
+    renderRevealCinematic(zoneNode, creature);
+    window.setTimeout(() => zoneNode.classList.remove("is-reveal-burst"), 1700);
   }
-  pulseElement(node, "is-spotlit", 1500);
-  window.setTimeout(() => node.classList.remove("is-revealing"), 1000);
+  pulseElement(node, "is-spotlit", 1900);
+  window.setTimeout(() => node.classList.remove("is-revealing"), 1250);
   pulseElement(refs.scoreReadout.closest(".hud-chip"), "is-energized", 900);
   pulseElement(refs.o2Meter, "is-refill", 1100);
 }
 
-function markCreatureMissed(creatureId) {
+function renderRevealCinematic(zoneNode, creature) {
+  zoneNode.querySelectorAll(".reveal-cinematic").forEach((node) => node.remove());
+  const overlay = document.createElement("div");
+  overlay.className = `reveal-cinematic reveal-cinematic--${creature.rarity.toLowerCase()}`;
+  overlay.style.setProperty("--reveal-color", creature.bioColor);
+  overlay.style.setProperty("--reveal-x", creature.position.left);
+  overlay.style.setProperty("--reveal-y", creature.position.top);
+  overlay.innerHTML = `
+    <span class="reveal-cinematic__halo"></span>
+    <span class="reveal-cinematic__scan"></span>
+    <span class="reveal-cinematic__ring"></span>
+    <span class="reveal-cinematic__label">IDENTIFIED // ${creature.rarity}</span>
+  `;
+  const cleanup = (event) => {
+    if (event.target === overlay) {
+      overlay.remove();
+    }
+  };
+  overlay.addEventListener("animationend", cleanup, { once: true });
+  zoneNode.appendChild(overlay);
+}
+
+function markCreatureSeen(creatureId) {
   const node = getCreatureNode(creatureId);
   if (!node) {
     return;
   }
-  node.classList.add("missed");
+  node.classList.add("seen");
+  node.querySelector(".creature__hint").textContent = "!";
+  node.setAttribute("aria-label", `Seen signal: ${creatureMap.get(creatureId).name}. Second attempt available.`);
   pulseElement(getZoneNode(creatureMap.get(creatureId).zone), "is-miss-shock", 1200);
 }
 
@@ -850,6 +1461,147 @@ function closeLogbook() {
   }
 }
 
+function setLogbookFilter(rarity) {
+  state.logbookFilter = rarity || "all";
+  renderLogbook();
+}
+
+function triggerSonar() {
+  if (
+    !state.started ||
+    state.ended ||
+    state.sonarCooling ||
+    state.transitionLocked ||
+    state.triviaState !== "idle" ||
+    isPanelOpen()
+  ) {
+    return;
+  }
+
+  const zone = zoneData[state.currentZone];
+  const zoneEl = getZoneNode(zone.id);
+  if (!zoneEl) {
+    return;
+  }
+
+  state.sonarCooling = true;
+  state.sonarReturns += 1;
+  refs.sonarButton.disabled = true;
+  refs.sonarButton.classList.add("is-cooling");
+
+  const hiddenCreatures = Array.from(zoneEl.querySelectorAll(".creature:not(.revealed):not(.missed)"));
+  const returnCount = hiddenCreatures.length;
+  const lifeLabel = hiddenCreatures.length === 1 ? "LIFEFORM" : "LIFEFORMS";
+
+  zoneEl.classList.add("is-sonar-active");
+  hiddenCreatures.forEach((node) => {
+    setSonarDelay(node);
+    node.classList.add("sonar-highlight");
+    renderSonarEcho(zoneEl, node);
+  });
+  renderSonarPulse(zoneEl, returnCount);
+
+  refs.sonarStatus.textContent = returnCount
+    ? `SONAR RETURN DETECTED // ${hiddenCreatures.length} ${lifeLabel}`
+    : "SONAR RETURN CLEAR // NO NEARBY TARGETS";
+  announce(refs.sonarStatus.textContent);
+  pulseElement(refs.sonarStatus, "is-detected", 1200);
+  pulseElement(refs.sonarButton, "is-energized", 900);
+
+  const activeTimer = window.setTimeout(() => {
+    clearSonarHighlights(zone.id);
+    ui.sonarTimers.delete(activeTimer);
+  }, SONAR_ACTIVE_MS);
+  ui.sonarTimers.add(activeTimer);
+
+  const cooldownTimer = window.setTimeout(() => {
+    state.sonarCooling = false;
+    refs.sonarButton.disabled = false;
+    refs.sonarButton.classList.remove("is-cooling");
+    refs.sonarStatus.textContent = "SONAR READY";
+    ui.sonarTimers.delete(cooldownTimer);
+  }, SONAR_COOLDOWN_MS);
+  ui.sonarTimers.add(cooldownTimer);
+}
+
+function renderSonarPulse(zoneEl, returnCount) {
+  zoneEl.querySelectorAll(".sonar-pulse").forEach((node) => node.remove());
+  const pulse = document.createElement("div");
+  pulse.className = "sonar-pulse";
+  pulse.style.setProperty("--return-intensity", returnCount > 0 ? "1" : "0.58");
+  pulse.innerHTML = `
+    <span class="sonar-pulse__ring"></span>
+    <span class="sonar-pulse__ring"></span>
+    <span class="sonar-pulse__ring"></span>
+    <span class="sonar-pulse__sweep"></span>
+  `;
+  const removePulse = () => pulse.remove();
+  pulse.addEventListener("animationend", removePulse, { once: true });
+  zoneEl.appendChild(pulse);
+}
+
+function renderSonarEcho(zoneEl, targetNode) {
+  const { x, y } = getTargetPosition(targetNode);
+  const profile = getSonarEchoProfile(targetNode);
+  const echo = document.createElement("span");
+  echo.className = "sonar-echo sonar-echo--creature";
+  echo.style.setProperty("--echo-x", `${x}%`);
+  echo.style.setProperty("--echo-y", `${y}%`);
+  echo.style.setProperty("--echo-size", profile.size);
+  echo.style.setProperty("--echo-alpha", profile.alpha);
+  echo.style.setProperty("--echo-strength", profile.strength);
+  echo.style.setProperty("--echo-glow", profile.glow);
+  echo.style.setProperty("--sonar-delay", targetNode.style.getPropertyValue("--sonar-delay") || "120ms");
+  echo.style.setProperty("--echo-color", "var(--bio-cyan)");
+  echo.setAttribute("aria-hidden", "true");
+  zoneEl.appendChild(echo);
+}
+
+function getSonarEchoProfile(targetNode) {
+  const creature = creatureMap.get(targetNode.dataset.creatureId);
+  if (!creature) {
+    return { size: "5rem", alpha: "0.56", strength: "58%", glow: "38%" };
+  }
+
+  if (["sperm_whale", "giant_squid"].includes(creature.id)) {
+    return { size: "11rem", alpha: "0.86", strength: "86%", glow: "66%" };
+  }
+  if (creature.rarity === "Legendary") {
+    return { size: "8.8rem", alpha: "0.76", strength: "78%", glow: "58%" };
+  }
+  if (creature.rarity === "Rare") {
+    return { size: "6.6rem", alpha: "0.64", strength: "66%", glow: "46%" };
+  }
+  return { size: "4.8rem", alpha: "0.48", strength: "52%", glow: "34%" };
+}
+
+function setSonarDelay(node) {
+  const { x, y } = getTargetPosition(node);
+  const distance = Math.hypot(x - 50, y - 50);
+  const delay = clamp((distance / 72) * 980, 80, 1100);
+  node.style.setProperty("--sonar-delay", `${delay.toFixed(0)}ms`);
+}
+
+function getTargetPosition(node) {
+  const left = parseFloat(node.style.getPropertyValue("--left"));
+  const top = parseFloat(node.style.getPropertyValue("--top"));
+  const sonarY = parseFloat(node.style.getPropertyValue("--sonar-y"));
+  return {
+    x: Number.isFinite(left) ? left : 50,
+    y: Number.isFinite(top) ? top : Number.isFinite(sonarY) ? sonarY : 48,
+  };
+}
+
+function clearSonarHighlights(zoneId) {
+  const zoneEl = getZoneNode(zoneId);
+  if (!zoneEl) {
+    return;
+  }
+  zoneEl.classList.remove("is-sonar-active");
+  zoneEl.querySelectorAll(".sonar-highlight").forEach((node) => node.classList.remove("sonar-highlight"));
+  zoneEl.querySelectorAll(".sonar-pulse, .sonar-echo").forEach((node) => node.remove());
+}
+
 function spawnPollution(zoneId) {
   clearZonePollution(zoneId);
   const zoneEl = getZoneNode(zoneId);
@@ -869,15 +1621,19 @@ function spawnPollution(zoneId) {
     const node = document.createElement("button");
     node.type = "button";
     node.className = "pollution-item";
+    node.dataset.type = type;
     node.setAttribute("aria-label", `Collect drifting ${type.replace("-", " ")}`);
     node.style.setProperty("--left", `${8 + Math.random() * 80}%`);
-    node.style.setProperty("--size", `${2 + Math.random() * 1.6}rem`);
-    node.style.setProperty("--duration", `${6.5 + Math.random() * 3.5}s`);
+    node.style.setProperty("--size", `${2.9 + Math.random() * 1.8}rem`);
+    node.style.setProperty("--duration", `${9.2 + Math.random() * 4.6}s`);
     node.style.setProperty("--drift", `${-8 + Math.random() * 16}vw`);
     node.style.setProperty("--spin", `${-180 + Math.random() * 360}deg`);
-    node.innerHTML = pollutionSvg(type);
+    node.style.setProperty("--sonar-y", `${12 + Math.random() * 76}%`);
+    node.innerHTML = `${pollutionSvg(type)}<span class="pollution-item__tag">Clean</span>`;
 
     const handleCollect = () => {
+      node.removeEventListener("click", handleCollect);
+      node.removeEventListener("animationend", handleMiss);
       node.classList.add("is-collected");
       state.pollutionCollected += 1;
       state.zonePollutionCollected[zoneId] += 1;
@@ -886,9 +1642,14 @@ function spawnPollution(zoneId) {
       updateZonePollutionMood(zoneId);
       updateHud();
       pulseElement(refs.pollutionReadout.closest(".hud-chip"), "is-energized", 650);
-      cleanupNode();
-      const nextTimeout = window.setTimeout(spawnOne, 620);
-      timeouts.add(nextTimeout);
+      pulseElement(node, "sonar-highlight", 360);
+      const finalizeCollect = () => {
+        node.removeEventListener("animationend", finalizeCollect);
+        node.remove();
+        const nextTimeout = window.setTimeout(spawnOne, 520);
+        timeouts.add(nextTimeout);
+      };
+      node.addEventListener("animationend", finalizeCollect, { once: true });
     };
 
     const handleMiss = () => {
@@ -911,8 +1672,8 @@ function spawnPollution(zoneId) {
     layer.appendChild(node);
   };
 
-  for (let index = 0; index < 4; index += 1) {
-    const timeoutId = window.setTimeout(spawnOne, index * 900);
+  for (let index = 0; index < 5; index += 1) {
+    const timeoutId = window.setTimeout(spawnOne, index * 520);
     timeouts.add(timeoutId);
   }
 }
@@ -939,19 +1700,40 @@ function updateZonePollutionMood(zoneId) {
 }
 
 function computeScore() {
+  const creaturePossible = creatureData.reduce((total, creature) => total + creature.points, 0);
   const creaturePoints = Array.from(state.discovered).reduce(
     (total, creatureId) => total + creatureMap.get(creatureId).points,
     0
   );
-  const pollutionBonus = Math.min(state.pollutionCollected * 2, 18);
-  const streakBonus = Math.min(state.bestDiscoveryStreak * 2, 10);
+  const creatureScore = Math.round((creaturePoints / creaturePossible) * 58);
+  const pollutionScore = Math.round(Math.min(state.pollutionCollected / 22, 1) * 18);
+  const streakScore = Math.round(Math.min(state.bestDiscoveryStreak / 8, 1) * 10);
   const fullZoneBonus = zoneData.reduce((total, zone) => {
     const zoneCreatures = creatureData.filter((creature) => creature.zone === zone.id);
     const foundAll = zoneCreatures.every((creature) => state.discovered.has(creature.id));
-    return total + (foundAll ? 4 : 0);
+    return total + (foundAll ? 2 : 0);
   }, 0);
-  state.score = Math.min(100, creaturePoints + pollutionBonus + streakBonus + fullZoneBonus);
+  const incorrectAttempts = Array.from(state.creatureAttempts.values()).reduce((total, attempts) => total + attempts, 0);
+  const attempts = state.triviaCorrect + incorrectAttempts;
+  const accuracyScore = attempts ? Math.round((state.triviaCorrect / attempts) * 4) : 0;
+  state.score = Math.min(100, creatureScore + pollutionScore + streakScore + fullZoneBonus + accuracyScore);
   updateHud();
+}
+
+function getZoneBreakdown(zone) {
+  const zoneCreatures = creatureData.filter((creature) => creature.zone === zone.id);
+  const foundCreatures = zoneCreatures.filter((creature) => state.discovered.has(creature.id));
+  const assistedCreatures = zoneCreatures.filter((creature) => state.assistedDiscoveries.has(creature.id));
+  const missedCreatures = zoneCreatures.filter((creature) => state.missedCreatures.has(creature.id));
+  return {
+    zone,
+    totalCreatures: zoneCreatures.length,
+    foundCreatures,
+    assistedCreatures,
+    missedCreatures,
+    pollutionCollected: state.zonePollutionCollected[zone.id] || 0,
+    pollutionMisses: state.zonePollutionMisses[zone.id] || 0,
+  };
 }
 
 function updateHud() {
@@ -964,10 +1746,12 @@ function updateHud() {
 
 function setOxygen(nextValue) {
   state.oxygen = clamp(nextValue, 0, 100);
-  const warning = state.oxygen <= 20 || zoneData[state.currentZone].id === "hadal";
+  const warning = state.oxygen <= 24 || zoneData[state.currentZone].id === "hadal";
+  const critical = state.oxygen <= 12;
   refs.o2Meter.classList.toggle("is-warning", warning);
+  document.body.classList.toggle("is-oxygen-critical", critical);
 
-  if (state.oxygen <= 22) {
+  if (state.oxygen <= 24) {
     refs.o2Fill.style.background =
       "linear-gradient(180deg, rgba(255, 214, 219, 0.25), rgba(239, 35, 60, 0.95))";
   } else {
@@ -985,6 +1769,9 @@ function finishDive() {
   state.ended = true;
   cancelAnimationFrame(ui.loopFrame);
   zoneData.forEach((zone) => clearZonePollution(zone.id));
+  stopHydrophoneLoop();
+  stopAmbientAudio();
+  stopBreathDetection();
   closeTriviaModal();
   closeLogbook();
   hideCreaturePanel();
@@ -994,14 +1781,9 @@ function finishDive() {
   const rank = getRank(state.score);
   refs.endTitle.textContent = rank.title;
   refs.endTitle.style.color = rank.color;
+  refs.endScreen.dataset.rank = rank.key;
   refs.endScore.textContent = `Final Score: ${state.score} // ${rank.title}`;
-  refs.endBreakdown.innerHTML = `
-    <p>Creatures Found: ${state.discovered.size} / ${creatureData.length}</p>
-    <p>Trivia Correct: ${state.triviaCorrect}</p>
-    <p>Pollution Collected: ${state.pollutionCollected}</p>
-    <p>Best Discovery Chain: ${state.bestDiscoveryStreak}</p>
-    <p>Oxygen Status: Surfaced at 0%</p>
-  `;
+  refs.endBreakdown.innerHTML = renderEndBreakdown(rank);
   announce(`Dive complete. ${rank.title}. Final score ${state.score}.`);
 }
 
@@ -1015,7 +1797,10 @@ function restartGame() {
   state.pollutionCollected = 0;
   state.pollutionCombo = 0;
   state.discovered.clear();
+  state.seenCreatures.clear();
+  state.assistedDiscoveries.clear();
   state.missedCreatures.clear();
+  state.creatureAttempts.clear();
   state.zonePollutionMisses = Object.fromEntries(zoneData.map((zone) => [zone.id, 0]));
   state.zonePollutionCollected = Object.fromEntries(zoneData.map((zone) => [zone.id, 0]));
   state.transitionLocked = false;
@@ -1023,20 +1808,52 @@ function restartGame() {
   state.modalCreatureId = null;
   state.bestDiscoveryStreak = 0;
   state.discoveryStreak = 0;
+  state.sonarCooling = false;
+  state.sonarReturns = 0;
+  state.breathCooling = false;
+  state.breathLevel = 0;
+  state.breathPeak = 0;
+  state.breathHoldMs = 0;
+  state.breathRefills = 0;
+  state.squidEasterEggShown = false;
+  state.tiltNavigationCooling = false;
+  state.logbookFilter = "all";
+  clearSonarTimers();
+  stopHydrophoneLoop();
+  stopAmbientAudio();
   refs.endScreen.hidden = true;
   refs.introScreen.hidden = false;
   refs.gameContainer.classList.remove("is-active");
   refs.gameContainer.setAttribute("aria-hidden", "true");
   refs.uiOverlay.hidden = true;
-  document.body.classList.remove("modal-open", "panel-open");
+  document.body.classList.remove("modal-open", "panel-open", "is-oxygen-critical");
   refs.triviaModal.hidden = true;
   refs.logbookPanel.classList.remove("is-open");
   refs.logbookButton.setAttribute("aria-expanded", "false");
   hideCreaturePanel();
   refs.shareFeedback.textContent = "";
+  refs.sonarStatus.textContent = "SONAR READY";
+  refs.sonarButton.disabled = false;
+  refs.sonarButton.classList.remove("is-cooling");
+  refs.breathReadout.textContent = "Standby";
+  refs.breathChip.classList.remove("is-muted", "is-listening", "is-breath-detected");
 
   refs.zones.forEach((zoneEl) => {
-    zoneEl.classList.remove("is-polluted", "is-cleansed", "is-reveal-burst", "is-miss-shock");
+    zoneEl.classList.remove(
+      "is-polluted",
+      "is-cleansed",
+      "is-reveal-burst",
+      "is-miss-shock",
+      "is-sonar-active",
+    "is-squid-pass"
+    );
+    zoneEl.querySelectorAll(".sonar-highlight, .sonar-pulse, .sonar-echo").forEach((node) => {
+      if (node.classList.contains("sonar-pulse") || node.classList.contains("sonar-echo")) {
+        node.remove();
+      } else {
+        node.classList.remove("sonar-highlight");
+      }
+    });
   });
 
   creatureData.forEach((creature) => {
@@ -1044,7 +1861,8 @@ function restartGame() {
     if (!node) {
       return;
     }
-    node.classList.remove("revealed", "missed");
+    node.classList.remove("revealed", "missed", "seen", "assisted");
+    node.querySelector(".creature__hint").textContent = "?";
     node.setAttribute("aria-label", `Unknown silhouette in ${zoneMap.get(creature.zone).title}`);
   });
 
@@ -1057,7 +1875,7 @@ function restartGame() {
 
 async function copyShareText() {
   const rank = getRank(state.score);
-  const shareText = `I explored DeepDive and surfaced as ${rank.title} with ${state.score} points. I identified ${state.discovered.size}/${creatureData.length} creatures and cleared ${state.pollutionCollected} pollution items from the descent.`;
+  const shareText = `I explored DeepDive and surfaced as ${rank.title} with ${state.score} points. I identified ${state.discovered.size}/${creatureData.length} creatures, logged ${state.assistedDiscoveries.size} assisted IDs, cleared ${state.pollutionCollected} pollution items, used ${state.sonarReturns} sonar pings, and made ${state.breathRefills} breath refills.`;
   try {
     await navigator.clipboard.writeText(shareText);
     refs.shareFeedback.textContent = "Share text copied to clipboard.";
@@ -1072,13 +1890,14 @@ function createParticles(zoneEl, zone) {
   for (let index = 0; index < zone.particleCount; index += 1) {
     const particle = document.createElement("span");
     const useBio = zone.particleType === "bio" && index % 4 === 0;
+    const isHadal = zone.id === "hadal";
     particle.className = `particle particle--${useBio ? "bio" : zone.particleType}`;
     particle.style.setProperty("--x", `${Math.random() * 100}%`);
-    particle.style.setProperty("--size", `${0.16 + Math.random() * 0.34}rem`);
-    particle.style.setProperty("--duration", `${12 + Math.random() * 12}s`);
+    particle.style.setProperty("--size", `${(isHadal ? 0.24 : 0.16) + Math.random() * (isHadal ? 0.48 : 0.34)}rem`);
+    particle.style.setProperty("--duration", `${(isHadal ? 22 : 12) + Math.random() * (isHadal ? 18 : 12)}s`);
     particle.style.setProperty("--delay", `${-Math.random() * 18}s`);
-    particle.style.setProperty("--drift", `${-5 + Math.random() * 10}vw`);
-    particle.style.setProperty("--opacity", `${0.12 + Math.random() * 0.5}`);
+    particle.style.setProperty("--drift", `${(isHadal ? -2.5 : -5) + Math.random() * (isHadal ? 5 : 10)}vw`);
+    particle.style.setProperty("--opacity", `${(isHadal ? 0.18 : 0.12) + Math.random() * (isHadal ? 0.34 : 0.5)}`);
     if (useBio) {
       particle.style.setProperty("--particle-color", colors[index % colors.length]);
     }
@@ -1088,48 +1907,140 @@ function createParticles(zoneEl, zone) {
 
 function pollutionSvg(type) {
   const color = pollutionPalette[type] || "#f4a261";
-  const palette = `style="fill:${color}22;stroke:${color};"`;
+  const palette = `style="--trash-color:${color}"`;
   const svgs = {
-    bottle: `<svg viewBox="0 0 64 64" ${palette}><path d="M26 4h12v8l4 6v36c0 3-2 6-6 6H28c-4 0-6-3-6-6V18l4-6V4Z"/><path d="M26 24h16"/></svg>`,
-    bag: `<svg viewBox="0 0 64 64" ${palette}><path d="M20 16h24l6 36H14l6-36Z"/><path d="M24 16c0-5 4-8 8-8s8 3 8 8"/></svg>`,
-    line: `<svg viewBox="0 0 64 64" ${palette}><path d="M10 12c16 10 28 10 44 0M12 52c12-18 28-18 40 0M8 30c20-12 28 18 48 0"/></svg>`,
-    "ghost-net": `<svg viewBox="0 0 64 64" ${palette}><path d="M10 10h44v44H10Z"/><path d="M10 10l44 44M54 10 10 54M22 10v44M42 10v44M10 22h44M10 42h44"/></svg>`,
-    gear: `<svg viewBox="0 0 64 64" ${palette}><path d="M31 8h2l3 6 7 2 6-3 4 4-3 6 2 7 6 3v2l-6 3-2 7 3 6-4 4-6-3-7 2-3 6h-2l-3-6-7-2-6 3-4-4 3-6-2-7-6-3v-2l6-3 2-7-3-6 4-4 6 3 7-2 3-6Z"/><circle cx="32" cy="32" r="8"/></svg>`,
-    drum: `<svg viewBox="0 0 64 64" ${palette}><path d="M18 10h28l4 8v28l-4 8H18l-4-8V18l4-8Z"/><path d="M18 24h32M18 40h32"/></svg>`,
-    microplastics: `<svg viewBox="0 0 64 64" ${palette}><circle cx="18" cy="18" r="4"/><circle cx="34" cy="14" r="3"/><circle cx="48" cy="22" r="5"/><circle cx="28" cy="34" r="4"/><circle cx="16" cy="46" r="5"/><circle cx="44" cy="44" r="4"/></svg>`,
-    debris: `<svg viewBox="0 0 64 64" ${palette}><path d="M8 42 22 10l14 22 20-16-8 38H14Z"/></svg>`,
-    sediment: `<svg viewBox="0 0 64 64" ${palette}><path d="M8 48c10-6 15-6 22 0 7-5 12-5 18 0 6-5 10-5 16 0v6H8Z"/></svg>`,
-    container: `<svg viewBox="0 0 64 64" ${palette}><path d="M12 20h40v28H12Z"/><path d="M20 20v28M32 20v28M44 20v28"/></svg>`,
-    oil: `<svg viewBox="0 0 64 64" ${palette}><path d="M18 42c0-8 6-13 14-13 2-8 9-13 17-12 7 1 13 8 13 16 0 10-7 17-17 17H29C22 50 18 47 18 42Z"/></svg>`,
+    bottle: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M27 5h11v8l5 7-2 34c-.2 3.8-2.8 6-6.3 6h-7.1c-3.7 0-6.1-2.3-6.3-6L19 20l5-7V5h3Z"/><path class="trash-shade" d="M31 15h8l3 6-1 11c-4.8-.4-9.2.6-14 3.4L26 21l5-6Z"/><path class="trash-line" d="M25 5h14M22 25c7 3 13 3 20 0M23 45c6-2 11-2 17 0"/></svg>`,
+    bag: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M17 18h30l7 36c-13 4-25 4-40 0l3-36Z"/><path class="trash-shade" d="M21 25c10-4 20-3 28 5l4 21c-11 3-22 3-35 0l3-26Z"/><path class="trash-line" d="M24 19c.3-7 4.3-11 9-11s8.7 4 9 11M24 36c7-3 14-2 22 3"/></svg>`,
+    line: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-line" d="M9 16c14 10 27 10 46-1M10 48c13-18 31-17 44 1M8 31c19-12 30 19 48-1"/><circle class="trash-fill" cx="18" cy="17" r="3"/><circle class="trash-fill" cx="48" cy="49" r="3"/></svg>`,
+    "ghost-net": `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M9 11c17-5 34-5 46 0v42c-14 4-30 4-46 0V11Z"/><path class="trash-line" d="M11 12l42 42M53 12 11 54M22 10v45M42 10v45M10 23h44M10 42h44"/></svg>`,
+    gear: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M31 7h3l4 7 7 2 7-3 4 5-4 7 2 7 7 4v3l-7 4-2 7 4 7-4 5-7-4-7 2-4 7h-3l-4-7-7-2-7 4-4-5 4-7-2-7-7-4v-3l7-4 2-7-4-7 4-5 7 3 7-2 4-7Z"/><circle class="trash-hole" cx="32" cy="34" r="8"/><path class="trash-line" d="M32 19v6M32 43v6M17 34h6M41 34h6"/></svg>`,
+    drum: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M18 9h28l5 8v30l-5 8H18l-5-8V17l5-8Z"/><path class="trash-shade" d="M18 14h28l3 5v10c-10 4-21 4-34 0V19l3-5Z"/><path class="trash-line" d="M17 24h32M17 42h32M26 28l12 10M38 28 26 38"/></svg>`,
+    microplastics: `<svg viewBox="0 0 64 64" ${palette}><circle class="trash-fill" cx="18" cy="18" r="4"/><circle class="trash-fill" cx="34" cy="14" r="3"/><circle class="trash-fill" cx="49" cy="23" r="5"/><circle class="trash-fill" cx="28" cy="35" r="4"/><circle class="trash-fill" cx="16" cy="47" r="5"/><circle class="trash-fill" cx="44" cy="45" r="4"/><path class="trash-line" d="M10 30c15-5 29 9 45 1"/></svg>`,
+    debris: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M8 43 22 10l14 22 20-15-8 38H14l-6-12Z"/><path class="trash-shade" d="M22 14 34 34 16 50l-6-8 12-28Z"/><path class="trash-line" d="M22 10 14 55M36 32l12 23M20 43l30-24"/></svg>`,
+    sediment: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M7 48c10-7 16-7 23 0 7-5 12-5 18 0 6-5 10-5 16 0v8H7v-8Z"/><path class="trash-line" d="M10 48c8-4 14-4 20 0 7-5 12-5 18 0 5-4 10-4 15 0"/></svg>`,
+    container: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M10 20h44v29H10z"/><path class="trash-shade" d="M12 23h40v9c-13 4-25 4-40 0v-9Z"/><path class="trash-line" d="M19 20v29M32 20v29M45 20v29M10 30h44"/></svg>`,
+    oil: `<svg viewBox="0 0 64 64" ${palette}><path class="trash-fill" d="M14 43c0-8 7-13 16-12 2-9 10-15 19-13 8 2 14 9 13 18-1 10-8 16-19 16H28c-9 0-14-3-14-9Z"/><path class="trash-shade" d="M27 34c7-3 16-2 27 4-2 7-7 11-16 11H27c-7 0-11-2-11-6 0-4 5-7 11-9Z"/><path class="trash-line" d="M21 42c7-3 16-2 27 2"/></svg>`,
   };
   return svgs[type] || svgs.bottle;
 }
 
 function getRank(score) {
-  if (score <= 30) {
-    return { title: "Surface Swimmer", color: "#cd7f32" };
+  if (score < 25) {
+    return { key: "surface", title: "Surface Swimmer", color: "#cd7f32", callout: "Kept the descent alive, but most signals remain unresolved." };
   }
-  if (score <= 60) {
-    return { title: "Reef Diver", color: "#c0c0c0" };
+  if (score < 50) {
+    return { key: "reef", title: "Reef Diver", color: "#c0c0c0", callout: "Recovered solid field data and cleared visible waste trails." };
   }
-  if (score <= 90) {
-    return { title: "Midnight Explorer", color: "#ffd166" };
+  if (score < 75) {
+    return { key: "midnight", title: "Midnight Explorer", color: "#ffd166", callout: "Mapped the deep with strong creature recovery and cleanup work." };
   }
-  return { title: "Deep Sea Legend", color: "#00f5d4" };
+  if (score < 90) {
+    return { key: "guardian", title: "Ocean Guardian", color: "#57cc99", callout: "Balanced discovery, oxygen control, and pollution response across the dive." };
+  }
+  return { key: "legend", title: "Deep Sea Legend", color: "#00f5d4", callout: "Near-perfect expedition record. The trench returned almost everything." };
+}
+
+function renderEndBreakdown(rank) {
+  const totalCreaturePoints = creatureData.reduce((total, creature) => total + creature.points, 0);
+  const earnedCreaturePoints = Array.from(state.discovered).reduce(
+    (total, creatureId) => total + creatureMap.get(creatureId).points,
+    0
+  );
+  const zoneRows = zoneData.map((zone) => {
+    const breakdown = getZoneBreakdown(zone);
+    const foundNames = breakdown.foundCreatures.map((creature) => creature.name).join(", ") || "None recovered";
+    const zoneCompletion = Math.round((breakdown.foundCreatures.length / breakdown.totalCreatures) * 100);
+    const cleanupState = breakdown.pollutionCollected >= 5 ? "Stabilized" : "Contaminated";
+    const assistedLabel = breakdown.assistedCreatures.length ? ` // ${breakdown.assistedCreatures.length} assisted` : "";
+    return `
+      <article class="zone-result">
+        <div class="zone-result__header">
+          <span>${zone.title}</span>
+          <strong>${zoneCompletion}%</strong>
+        </div>
+        <div class="zone-result__bar" style="--zone-progress: ${zoneCompletion}%"></div>
+        <p>${breakdown.foundCreatures.length}/${breakdown.totalCreatures} creatures${assistedLabel} // ${breakdown.pollutionCollected} waste cleared // ${cleanupState}</p>
+        <p class="zone-result__names">${foundNames}</p>
+      </article>
+    `;
+  }).join("");
+
+  return `
+    <section class="end-rank-card">
+      <p class="end-rank-card__label">Expedition Rank</p>
+      <h3 style="color: ${rank.color}">${rank.title}</h3>
+      <p>${rank.callout}</p>
+    </section>
+    <section class="end-stat-grid" aria-label="Score breakdown">
+      <article><span>${state.discovered.size}/${creatureData.length}</span><p>Creatures Found</p></article>
+      <article><span>${state.assistedDiscoveries.size}</span><p>Assisted IDs</p></article>
+      <article><span>${state.triviaCorrect}</span><p>Trivia Correct</p></article>
+      <article><span>${state.pollutionCollected}</span><p>Waste Cleared</p></article>
+      <article><span>${state.bestDiscoveryStreak}</span><p>Best Chain</p></article>
+      <article><span>${state.sonarReturns}</span><p>Sonar Pings</p></article>
+      <article><span>${state.breathRefills}</span><p>Breath Refills</p></article>
+      <article><span>${earnedCreaturePoints}/${totalCreaturePoints}</span><p>Creature XP</p></article>
+    </section>
+    <section class="zone-results" aria-label="Zone-by-zone expedition results">
+      ${zoneRows}
+    </section>
+  `;
 }
 
 function getOxygenReward(rarity) {
   if (rarity === "Legendary") {
-    return 30;
-  }
-  if (rarity === "Rare") {
     return 24;
   }
-  return 16;
+  if (rarity === "Rare") {
+    return 18;
+  }
+  return 12;
 }
 
 function isPanelOpen() {
   return refs.logbookPanel.classList.contains("is-open");
+}
+
+function clearSonarTimers() {
+  ui.sonarTimers.forEach((timeoutId) => clearTimeout(timeoutId));
+  ui.sonarTimers.clear();
+}
+
+function stopBreathDetection() {
+  cancelAnimationFrame(ui.breathFrame);
+  clearTimeout(ui.breathCooldownTimer);
+  ui.breathFrame = 0;
+  ui.lastBreathTimestamp = 0;
+  ui.breathCooldownTimer = 0;
+  if (ui.breathStream) {
+    ui.breathStream.getTracks().forEach((track) => track.stop());
+  }
+  if (ui.breathContext) {
+    ui.breathContext.close();
+  }
+  ui.breathStream = null;
+  ui.breathContext = null;
+  ui.breathAnalyser = null;
+  ui.breathData = null;
+}
+
+function stopHydrophoneLoop() {
+  clearTimeout(ui.hydrophoneTimer);
+  ui.hydrophoneTimer = 0;
+  if (ui.hydrophoneGain && ui.hydrophoneContext) {
+    const now = ui.hydrophoneContext.currentTime;
+    ui.hydrophoneGain.gain.cancelScheduledValues(now);
+    ui.hydrophoneGain.gain.setTargetAtTime(0.0001, now, 0.18);
+  }
+}
+
+function stopAmbientAudio() {
+  if (!ui.hydrophoneContext || !ui.hydrophoneGain) {
+    return;
+  }
+  const now = ui.hydrophoneContext.currentTime;
+  ui.hydrophoneGain.gain.cancelScheduledValues(now);
+  ui.hydrophoneGain.gain.setTargetAtTime(0.0001, now, 0.24);
 }
 
 function getZoneNode(zoneId) {
