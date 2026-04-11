@@ -377,6 +377,7 @@ const BREATH_OXYGEN_REWARD = 14;
 const ASSISTED_OXYGEN_REWARD = 6;
 const FLASHLIGHT_ZONES = new Set(["midnight", "abyssal", "hadal"]);
 const SQUID_PASS_ZONE = "twilight";
+const SQUID_PASS_DELAY_MS = 10000;
 const SQUID_PASS_DURATION_MS = 22000;
 const SQUID_PASS_AUDIO_PATH = "assets/audio/noaa_bloop.wav";
 
@@ -491,6 +492,7 @@ const ui = {
   ambientRumbleOsc: null,
   ambientDriftOsc: null,
   squidCueAudio: null,
+  squidPassDelayTimer: 0,
   squidPassTimer: 0,
   tiltTimer: 0,
   depthAnimationFrame: 0,
@@ -1039,6 +1041,9 @@ function activateZone(zoneId) {
 function deactivateZone(zoneId) {
   clearZonePollution(zoneId);
   clearSonarHighlights(zoneId);
+  if (zoneId === SQUID_PASS_ZONE && !state.squidEasterEggShown) {
+    clearSquidPassDelay();
+  }
 }
 
 function setZoneImmediate(index) {
@@ -1100,7 +1105,7 @@ function updateHydrophoneForZone(zoneId) {
   }
 
   if (zoneId === SQUID_PASS_ZONE && !state.squidEasterEggShown) {
-    triggerSquidEasterEggPass();
+    scheduleSquidEasterEggPass();
   }
 
   if (!state.audioEnabled || !ui.hydrophoneContext) {
@@ -1109,6 +1114,19 @@ function updateHydrophoneForZone(zoneId) {
 
   applyAmbientAudioProfile(zoneId);
   startHydrophoneLoop();
+}
+
+function scheduleSquidEasterEggPass() {
+  if (ui.squidPassDelayTimer) {
+    return;
+  }
+
+  ui.squidPassDelayTimer = window.setTimeout(() => {
+    ui.squidPassDelayTimer = 0;
+    if (state.started && !state.ended && zoneData[state.currentZone]?.id === SQUID_PASS_ZONE) {
+      triggerSquidEasterEggPass();
+    }
+  }, SQUID_PASS_DELAY_MS);
 }
 
 function triggerSquidEasterEggPass() {
@@ -1125,6 +1143,11 @@ function triggerSquidEasterEggPass() {
     passZone.classList.remove("is-squid-pass");
     ui.squidPassTimer = 0;
   }, SQUID_PASS_DURATION_MS);
+}
+
+function clearSquidPassDelay() {
+  clearTimeout(ui.squidPassDelayTimer);
+  ui.squidPassDelayTimer = 0;
 }
 
 function playSquidEasterEggCue() {
@@ -1150,6 +1173,7 @@ function playSquidEasterEggCue() {
 }
 
 function stopSquidEasterEggCue() {
+  clearSquidPassDelay();
   clearTimeout(ui.squidPassTimer);
   ui.squidPassTimer = 0;
   refs.zones.forEach((zoneEl) => zoneEl.classList.remove("is-squid-pass"));
