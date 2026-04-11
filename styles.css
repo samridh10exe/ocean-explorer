@@ -157,6 +157,11 @@ button {
   overflow-y: auto;
 }
 
+#intro-screen {
+  overflow: hidden;
+  background: #010b13;
+}
+
 .is-active {
   display: block;
 }
@@ -177,6 +182,7 @@ button {
 .end-screen__veil {
   position: absolute;
   inset: 0;
+  z-index: 0;
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.2), transparent 18%),
     linear-gradient(180deg, rgba(144, 224, 239, 0.5), rgba(0, 119, 182, 0.3) 20%, rgba(1, 11, 19, 0.9) 100%),
@@ -194,10 +200,128 @@ button {
   animation: subtle-drift 20s linear infinite;
 }
 
+.intro-screen__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.intro-screen__surface {
+  position: absolute;
+  top: -12rem;
+  left: -12vw;
+  width: 124vw;
+  height: 20rem;
+  background:
+    radial-gradient(ellipse at 26% 62%, rgba(224, 247, 250, 0.38), transparent 31%),
+    radial-gradient(ellipse at 68% 48%, rgba(76, 201, 240, 0.28), transparent 34%),
+    repeating-radial-gradient(ellipse at center, rgba(224, 247, 250, 0.18) 0 0.12rem, transparent 0.15rem 1.25rem);
+  filter: blur(9px);
+  opacity: 0.68;
+  mix-blend-mode: screen;
+  animation: intro-surface-swell 13s var(--transition-ease) infinite alternate;
+  will-change: transform, opacity;
+}
+
+.intro-screen__rays {
+  position: absolute;
+  top: -22%;
+  left: -28%;
+  width: 156%;
+  height: 104%;
+  background:
+    conic-gradient(
+      from -24deg at 50% 0%,
+      transparent 0deg,
+      rgba(224, 247, 250, 0.18) 9deg,
+      transparent 19deg,
+      transparent 34deg,
+      rgba(76, 201, 240, 0.13) 43deg,
+      transparent 58deg,
+      transparent 360deg
+    );
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.76) 42%, transparent 78%);
+  opacity: 0.8;
+  mix-blend-mode: screen;
+  transform-origin: 50% 0%;
+  animation: intro-rays-sway 21s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.intro-screen__particle-field {
+  position: absolute;
+  inset: 0;
+}
+
+.intro-screen__particle-field span {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 999px;
+  background: rgba(224, 247, 250, 0.78);
+  box-shadow:
+    0 0 10px rgba(224, 247, 250, 0.34),
+    0 0 22px rgba(76, 201, 240, 0.18);
+  opacity: 0;
+  animation: intro-particle-rise var(--duration) linear infinite;
+  animation-delay: var(--delay);
+  will-change: transform, opacity;
+}
+
+.intro-screen__creature {
+  position: absolute;
+  display: block;
+  width: clamp(7rem, 16vw, 16rem);
+  height: auto;
+  object-fit: contain;
+  opacity: 0.26;
+  filter:
+    brightness(0.16)
+    saturate(0.45)
+    sepia(0.22)
+    hue-rotate(150deg)
+    drop-shadow(0 0 20px rgba(76, 201, 240, 0.22));
+  will-change: transform, opacity;
+}
+
+.intro-screen__creature--dolphin {
+  top: 18%;
+  left: -18rem;
+  width: clamp(10rem, 22vw, 22rem);
+  animation: intro-swim-right 24s ease-in-out -8s infinite;
+}
+
+.intro-screen__creature--turtle {
+  right: -13rem;
+  bottom: 13%;
+  width: clamp(8rem, 17vw, 17rem);
+  opacity: 0.22;
+  animation: intro-swim-left 31s ease-in-out -13s infinite;
+}
+
+.intro-screen__creature--squid {
+  left: -9rem;
+  bottom: 24%;
+  width: clamp(5.5rem, 10vw, 10rem);
+  opacity: 0.34;
+  filter:
+    brightness(0.22)
+    saturate(0.7)
+    sepia(0.25)
+    hue-rotate(138deg)
+    drop-shadow(0 0 18px rgba(0, 245, 212, 0.22));
+  animation: intro-squid-drift 19s ease-in-out -5s infinite;
+}
+
 .intro-screen__content,
 .end-screen__content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: grid;
   place-content: center;
   gap: 1.5rem;
@@ -2572,6 +2696,88 @@ body.is-transitioning #zone-stage {
   100% {
     opacity: 0;
     transform: translate3d(112vw, 3vh, 0) scale(1.18) rotate(2deg);
+  }
+}
+
+@keyframes intro-surface-swell {
+  from {
+    opacity: 0.52;
+    transform: translate3d(-1.5vw, 0, 0) scaleX(1);
+  }
+  to {
+    opacity: 0.76;
+    transform: translate3d(1.5vw, 0.8rem, 0) scaleX(1.04);
+  }
+}
+
+@keyframes intro-rays-sway {
+  from {
+    opacity: 0.62;
+    transform: rotate(-5deg) translate3d(-1%, 0, 0);
+  }
+  to {
+    opacity: 0.86;
+    transform: rotate(4deg) translate3d(1%, 1.4%, 0);
+  }
+}
+
+@keyframes intro-particle-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 2rem, 0) scale(0.65);
+  }
+  18%,
+  74% {
+    opacity: 0.68;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(1.6vw, -26vh, 0) scale(1.08);
+  }
+}
+
+@keyframes intro-swim-right {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(-3deg) scaleX(1);
+  }
+  14%,
+  78% {
+    opacity: 0.28;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(100vw + 34rem), 5vh, 0) rotate(2deg) scaleX(1);
+  }
+}
+
+@keyframes intro-swim-left {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(3deg) scaleX(-1);
+  }
+  18%,
+  76% {
+    opacity: 0.22;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(-100vw - 28rem), -4vh, 0) rotate(-2deg) scaleX(-1);
+  }
+}
+
+@keyframes intro-squid-drift {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(-4deg);
+  }
+  16%,
+  72% {
+    opacity: 0.34;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(100vw + 18rem), -6vh, 0) rotate(4deg);
   }
 }
 
