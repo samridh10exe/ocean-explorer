@@ -153,6 +153,10 @@ button {
   display: none;
 }
 
+#end-screen {
+  overflow-y: auto;
+}
+
 .is-active {
   display: block;
 }
@@ -895,6 +899,22 @@ body.is-transitioning #zone-stage {
   opacity: 0.54;
 }
 
+.zone.has-flashlight .creature:not(.revealed) .creature__img {
+  filter:
+    brightness(0.07)
+    blur(1.45px)
+    drop-shadow(0 0 9px rgba(76, 201, 240, 0.34));
+  opacity: 0.76;
+}
+
+.zone.has-flashlight .creature.seen:not(.revealed) .creature__img {
+  filter:
+    brightness(0.12)
+    blur(1.5px)
+    drop-shadow(0 0 12px rgba(244, 162, 97, 0.58));
+  opacity: 0.88;
+}
+
 .zone.has-flashlight .creature:hover .creature__img,
 .zone.has-flashlight .creature:focus-visible .creature__img,
 .zone.has-flashlight .pollution-item:hover,
@@ -1062,6 +1082,12 @@ body.is-transitioning #zone-stage {
   background: rgba(0, 0, 0, 0.55);
   box-shadow: 0 0 10px rgba(0, 245, 212, 0.18);
   transition: opacity 260ms var(--transition-ease), transform 260ms var(--transition-ease);
+}
+
+.zone.has-flashlight .creature__hint {
+  opacity: 0.92;
+  border-color: rgba(76, 201, 240, 0.7);
+  box-shadow: 0 0 16px rgba(0, 245, 212, 0.26);
 }
 
 .creature:hover .creature__hint,
@@ -1580,6 +1606,8 @@ body.is-transitioning #zone-stage {
   bottom: 0;
   width: min(25rem, calc(100vw - var(--sidebar-width) - 2rem));
   padding: 1.4rem 1.2rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transform: translate3d(calc(100% + 2rem), 0, 0);
   transition: transform 440ms var(--transition-ease);
 }
@@ -1655,6 +1683,7 @@ body.is-transitioning #zone-stage {
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   gap: 0.8rem;
   margin-top: 1.4rem;
+  padding-bottom: 2rem;
 }
 
 .logbook-card {
@@ -1838,9 +1867,13 @@ body.is-transitioning #zone-stage {
 }
 
 .end-screen__content {
+  align-content: start;
   justify-items: start;
+  min-height: auto;
   max-width: min(68rem, 100vw);
-  overflow: auto;
+  margin: 0 auto;
+  padding-top: clamp(2rem, 5vh, 4rem);
+  padding-bottom: 4rem;
 }
 
 .end-screen__score {
@@ -2050,10 +2083,10 @@ body.is-transitioning #zone-stage {
 @keyframes bio-breathe {
   0%,
   100% {
-    filter: brightness(1.02) saturate(1.05) drop-shadow(0 0 6px var(--bio-color, var(--bio-cyan)));
+    filter: brightness(1.08) saturate(1.08) drop-shadow(0 0 8px var(--bio-color, var(--bio-cyan)));
   }
   50% {
-    filter: brightness(1.2) saturate(1.16) drop-shadow(0 0 18px var(--bio-color, var(--bio-cyan)));
+    filter: brightness(1.28) saturate(1.2) drop-shadow(0 0 24px var(--bio-color, var(--bio-cyan)));
   }
 }
 

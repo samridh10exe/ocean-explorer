@@ -241,7 +241,7 @@ const creatureData = [
     idleAnimation: "cephalopod",
     bioColor: "var(--bio-cyan)",
     points: 10,
-    position: { top: "8%", left: "38%", width: "clamp(16rem, 34vw, 28rem)" },
+    position: { top: "18%", left: "36%", width: "clamp(15rem, 32vw, 26rem)" },
   },
   {
     id: "basket_star",
