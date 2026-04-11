@@ -1361,53 +1361,10 @@ body.is-transitioning #zone-stage {
 }
 
 .pollution-item svg,
-.pollution-item__img,
-.pollution-item__sprite {
+.pollution-item__img {
   width: 100%;
   height: 100%;
   pointer-events: none;
-}
-
-.pollution-item__sprite {
-  display: block;
-  background-image: var(--sprite-url);
-  background-repeat: no-repeat;
-  background-position: 0 0;
-  background-size: 400% 100%;
-  image-rendering: pixelated;
-  filter:
-    saturate(0.2)
-    brightness(0.5)
-    contrast(0.9)
-    hue-rotate(180deg)
-    drop-shadow(0 7px 9px rgba(0, 0, 0, 0.34));
-  opacity: 0.74;
-  transform: rotate(-2deg);
-  animation: pollution-sprite-idle 720ms steps(4) infinite;
-  will-change: background-position, transform, opacity;
-}
-
-.pollution-item[data-type="tire"] .pollution-item__sprite {
-  filter:
-    saturate(0.15)
-    brightness(0.46)
-    contrast(1.05)
-    hue-rotate(170deg)
-    drop-shadow(0 7px 9px rgba(0, 0, 0, 0.38));
-}
-
-.pollution-item[data-type="takeout-box"] .pollution-item__sprite {
-  opacity: 0.68;
-}
-
-.pollution-item[data-type="gear"] .pollution-item__sprite {
-  filter:
-    saturate(0.18)
-    brightness(0.58)
-    contrast(0.95)
-    hue-rotate(165deg)
-    drop-shadow(0 7px 9px rgba(0, 0, 0, 0.34));
-  opacity: 0.78;
 }
 
 .pollution-item__img {
@@ -1421,10 +1378,12 @@ body.is-transitioning #zone-stage {
   overflow: visible;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 7px 9px rgba(0, 0, 0, 0.32));
-  opacity: var(--trash-alpha, 0.72);
+  filter:
+    drop-shadow(0 7px 9px rgba(0, 0, 0, 0.28))
+    drop-shadow(0 0 8px rgba(255, 255, 255, 0.08));
+  opacity: var(--trash-alpha, 0.88);
   transform-origin: center;
-  will-change: transform, opacity;
+  will-change: opacity;
 }
 
 .trash-fill {
@@ -1482,10 +1441,6 @@ body.is-transitioning #zone-stage {
   opacity: 0.58;
 }
 
-.pollution-item[data-type="line"] svg {
-  animation: trash-line-undulate 4.8s ease-in-out infinite;
-}
-
 .pollution-item[data-type="microplastics"] svg {
   filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.24));
 }
@@ -1517,16 +1472,6 @@ body.is-transitioning #zone-stage {
 .pollution-item:hover .pollution-item__img,
 .pollution-item:focus-visible .pollution-item__img {
   filter: drop-shadow(0 9px 11px rgba(0, 0, 0, 0.38)) brightness(1.14);
-}
-
-.pollution-item:hover .pollution-item__sprite,
-.pollution-item:focus-visible .pollution-item__sprite {
-  filter:
-    saturate(0.24)
-    brightness(0.64)
-    contrast(0.94)
-    hue-rotate(180deg)
-    drop-shadow(0 9px 11px rgba(0, 0, 0, 0.38));
 }
 
 .pollution-item:hover .pollution-item__tag,
@@ -2251,25 +2196,6 @@ body.is-transitioning #zone-stage {
   100% {
     opacity: 0;
     transform: translate3d(0, -1rem, 0) scale(1.4);
-  }
-}
-
-@keyframes pollution-sprite-idle {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 100% 0;
-  }
-}
-
-@keyframes trash-line-undulate {
-  0%,
-  100% {
-    transform: rotate(-2deg) scaleX(1);
-  }
-  50% {
-    transform: rotate(3deg) scaleX(1.05);
   }
 }
 

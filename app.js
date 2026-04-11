@@ -10,7 +10,7 @@ const zoneData = [
       "Light still reaches this layer. Caustic beams flicker overhead, and recognizable silhouettes move through clear blue water.",
     particleType: "surface",
     particleCount: 34,
-    pollutionTypes: ["bottle", "takeout-box", "tire", "line"],
+    pollutionTypes: ["bottle", "bottle", "tire", "gear"],
     oxygenDrainMultiplier: 0.72,
   },
   {
@@ -24,7 +24,7 @@ const zoneData = [
       "The glow from above begins to fail. Bioluminescent sparks appear, and each reveal feels like turning on a light in the dark.",
     particleType: "bio",
     particleCount: 36,
-    pollutionTypes: ["gear", "tire", "line"],
+    pollutionTypes: ["gear", "tire", "bottle"],
     oxygenDrainMultiplier: 0.94,
   },
   {
@@ -52,7 +52,7 @@ const zoneData = [
       "Marine snow drifts through a pressure-crushed quiet. The scene is almost empty until a hidden body turns and catches the dark.",
     particleType: "snow",
     particleCount: 54,
-    pollutionTypes: ["debris", "microplastics"],
+    pollutionTypes: ["drum", "microplastics"],
     oxygenDrainMultiplier: 1.42,
   },
   {
@@ -66,7 +66,7 @@ const zoneData = [
       "The trench is a void. The instrument stack strains, the oxygen alarm never settles, and life appears only as a ghostly interruption of the black.",
     particleType: "snow",
     particleCount: 32,
-    pollutionTypes: ["container", "microplastics"],
+    pollutionTypes: ["drum", "microplastics"],
     oxygenDrainMultiplier: 1.86,
   },
 ];
@@ -343,36 +343,23 @@ const creatureData = [
 
 const pollutionPalette = {
   bottle: { main: "#8d9188", shade: "#5d625d", line: "#343a36", alpha: 0.76 },
-  "takeout-box": { main: "#878a80", shade: "#5b5d55", line: "#30332e", alpha: 0.76 },
-  tire: { main: "#383b35", shade: "#20241f", line: "#111410", alpha: 0.78 },
-  line: { main: "#726d63", shade: "#4c4a45", line: "#2e302e", alpha: 0.72 },
-  gear: { main: "#6d7069", shade: "#464941", line: "#252924", alpha: 0.78 },
-  drum: { main: "#6f7047", shade: "#4c3f2d", line: "#27281d", rust: "#8a4f34", alpha: 0.82 },
-  microplastics: { main: "#898b82", shade: "#63665e", line: "#3f443d", alpha: 0.68 },
-  debris: { main: "#676759", shade: "#48483e", line: "#262820", rust: "#76523a", alpha: 0.8 },
-  container: { main: "#5e5f4c", shade: "#3f4034", line: "#20231d", rust: "#7a4632", alpha: 0.76 },
-};
-
-const pollutionSpritePaths = {
-  bottle: "assets/pollution/bottle2idle.png",
-  "takeout-box": "assets/pollution/boxidle.png",
-  tire: "assets/pollution/tireidle.png",
-  gear: "assets/pollution/fishing-hook.png",
+  tire: { main: "#5d625b", shade: "#373d38", line: "#202620", alpha: 0.88 },
+  gear: { main: "#7a7768", shade: "#565247", line: "#2e302b", alpha: 0.88 },
+  drum: { main: "#76734d", shade: "#4e422f", line: "#28291f", rust: "#9a5b3a", alpha: 0.9 },
+  microplastics: { main: "#9fa39a", shade: "#73786f", line: "#4a5048", alpha: 0.86 },
 };
 
 const pollutionZoneSettings = {
-  sunlight: { initial: 8, respawn: 360, duration: [8.5, 12.5], size: [3.2, 5.0], drift: [-10, 14] },
-  twilight: { initial: 5, respawn: 680, duration: [12.5, 17.5], size: [3.4, 5.4], drift: [-14, 10] },
-  midnight: { initial: 3, respawn: 1200, duration: [17.5, 24], size: [3.0, 4.8], drift: [-8, 8] },
-  abyssal: { initial: 2, respawn: 1800, duration: [24, 32], size: [2.6, 4.4], drift: [-5, 5] },
-  hadal: { initial: 2, respawn: 2400, duration: [30, 40], size: [2.4, 4.2], drift: [-3, 3] },
+  sunlight: { initial: 8, respawn: 420, duration: [10, 14], size: [3.8, 5.4], drift: [-8, 10] },
+  twilight: { initial: 5, respawn: 760, duration: [14, 19], size: [3.6, 5.0], drift: [-9, 8] },
+  midnight: { initial: 3, respawn: 1300, duration: [19, 26], size: [3.2, 4.6], drift: [-5, 5] },
+  abyssal: { initial: 2, respawn: 1900, duration: [26, 34], size: [2.9, 4.2], drift: [-3, 3] },
+  hadal: { initial: 2, respawn: 2500, duration: [32, 42], size: [2.8, 4.0], drift: [-2, 2] },
 };
 
 const pollutionTypeSettings = {
-  bottle: { sizeBoost: 1.05 },
-  "takeout-box": { sizeBoost: 1.08 },
-  tire: { sizeBoost: 1.02 },
-  line: { sizeBoost: 1.1 },
+  bottle: { sizeBoost: 0.92 },
+  tire: { sizeBoost: 1.05 },
   gear: { sizeBoost: 0.95 },
   drum: { sizeBoost: 1.1 },
   microplastics: { sizeBoost: 0.72 },
@@ -2050,10 +2037,6 @@ function createParticles(zoneEl, zone) {
 }
 
 function pollutionAsset(type) {
-  const spritePath = pollutionSpritePaths[type];
-  if (spritePath) {
-    return `<span class="pollution-item__sprite" style="--sprite-url:url('${spritePath}')" aria-hidden="true"></span>`;
-  }
   return pollutionSvg(type);
 }
 
@@ -2067,13 +2050,11 @@ function pollutionSvg(type) {
     `--trash-alpha:${color.alpha}`,
   ].join(";");
   const svgs = {
-    bottle: `<svg class="trash-illustration trash-bottle" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-fill" d="M26 6h12v7l5 6-2 35c-.2 3.6-2.7 5.8-6.2 5.8h-7.4c-3.5 0-5.9-2.2-6.1-5.8L19 19l5-6V6h2Z"/><path class="trash-shade" d="M27 16h11.5l3.1 4.4-.5 8.8c-5.9-1.2-11.1-.4-15.8 2.5l-.7-11.1L27 16Z"/><path class="trash-cap" d="M25 3.8h14v5.4H25z"/><path class="trash-line" d="M23.5 24.5c6.7 2.8 12.7 2.8 18.1.1M24.1 43.8c5.2-1.8 10.6-1.9 16.4-.2"/></svg>`,
-    line: `<svg class="trash-illustration trash-line-tangle" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-rope" d="M8.5 18.5c11.8 8.8 23.5 7.8 46.8-1.8M10.2 49.7c11.2-18.7 31.5-18.1 44.7.8M8.4 34.5c18.6-13.5 30.2 17.9 47.8-2.9M17 15c8 9.5 6.7 22.9-4.3 34.2"/><circle class="trash-knot" cx="17" cy="18" r="3.3"/><circle class="trash-knot" cx="49" cy="49" r="3.1"/></svg>`,
-    gear: `<svg class="trash-illustration trash-gear" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-fill" d="M30.2 7.5h4.3l3.6 7 5.8 1.8 6.7-3 4.5 5-3.4 6.6 2 5.6 6.7 3.7v5.5l-6.9 3.2-2.3 5.8 3.2 6.7-4.8 4.5-6.5-3.5-6 2.2-3.4 6.8h-4.4l-3.3-6.9-5.8-2-6.7 3.1-4.6-5 3.4-6.4-2.1-5.9-6.6-3.5v-5.5l6.7-3.4 2-5.8-3.1-6.6 4.9-4.6 6.3 3.3 6.2-2 3.5-6.7Z"/><circle class="trash-hole" cx="32" cy="34" r="8.2"/><path class="trash-line" d="M32 19v6M32 43v6M17 34h6M41 34h6"/></svg>`,
+    bottle: `<svg class="trash-illustration trash-bottle" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-fill" d="M27 6h11v7l5 6-2.2 34c-.3 3.9-2.7 6-6.3 6h-6.7c-3.6 0-6-2.1-6.3-6L19.3 19l5-6V6H27Z"/><path class="trash-shade" d="M26.4 19h12.4l2.2 4.2-.5 8.3c-5.9-1.3-11.3-.4-16 2.5l-.6-10.7 2.5-4.3Z"/><path class="trash-cap" d="M25 3.5h15v5.8H25z"/><path class="trash-line" d="M23.5 25.5c6.9 2.7 13 2.7 18.4 0M24.2 44.5c5.3-1.7 10.9-1.8 16.5-.1"/></svg>`,
+    tire: `<svg class="trash-illustration trash-tire" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><circle class="trash-fill" cx="32" cy="32" r="22"/><circle class="trash-hole" cx="32" cy="32" r="11"/><path class="trash-shade" d="M16 28c4.8-9.8 14.2-14 26.1-10.7 8.2 2.3 13.2 8.8 14 16.6-10-6.5-23.7-8.2-40.1-5.9Z"/><path class="trash-line" d="M19 19 27 27M45 19l-8 8M19 45l8-8M45 45l-8-8"/></svg>`,
+    gear: `<svg class="trash-illustration trash-hook" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-rope" d="M19 8c8.8 9.5 18.3 18.5 28.8 26.7"/><path class="trash-fill" d="M42.5 31.5c3.8 5 4.1 10.7.7 15.7-4.4 6.5-14.8 7-19.5.9-2.4-3.2-2.2-7.5.7-9.3 2.6-1.7 6-.8 7.1 2 .7 1.7-.4 3.5-2 4.1 2.4 2.4 7.7 1.5 10.2-2.2 2.2-3.4 1.7-7.8-1.4-11.5l4.2.3Z"/><circle class="trash-knot" cx="18.2" cy="8.4" r="3.2"/></svg>`,
     drum: `<svg class="trash-illustration trash-drum" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><ellipse class="trash-fill" cx="32" cy="13.5" rx="15" ry="6"/><path class="trash-fill" d="M17 13.5c1.1 7.9 1.1 28.9 0 36.2 8 6 22 6 30 0-1.1-7.3-1.1-28.3 0-36.2-7.9 4.2-22.1 4.2-30 0Z"/><path class="trash-shade" d="M18.3 17.7c7.7 3.4 19.7 3.3 27.5-.2l.4 9.7c-7.6 4.5-19.1 4.4-28.3.2l.4-9.7Z"/><path class="trash-rust" d="M22.5 33.5c8.7 1.8 14.8 1.6 22.4-.5l.3 5.8c-7.8 2.2-14.7 2.3-23.2.4l.5-5.7Z"/><path class="trash-line" d="M18.4 27.2c8.9 3.9 18.2 3.8 27.3 0M18.2 45.3c8.5 4.2 18.1 4.2 27.7 0"/></svg>`,
-    microplastics: `<svg class="trash-illustration trash-microplastics" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><circle class="trash-dot" cx="15" cy="18" r="2.8"/><circle class="trash-dot shade" cx="28" cy="12" r="1.7"/><circle class="trash-dot" cx="45" cy="19" r="2.4"/><circle class="trash-dot shade" cx="53" cy="32" r="1.8"/><circle class="trash-dot" cx="35" cy="34" r="2.6"/><circle class="trash-dot shade" cx="19" cy="43" r="2.1"/><circle class="trash-dot" cx="44" cy="50" r="2.9"/><circle class="trash-dot shade" cx="28" cy="54" r="1.5"/><circle class="trash-dot" cx="11" cy="32" r="1.6"/></svg>`,
-    debris: `<svg class="trash-illustration trash-debris" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-fill" d="M8.8 43.2 21.8 10l14 21.4 20.1-13.5-7.2 37.4H14.2l-5.4-12.1Z"/><path class="trash-shade" d="M21.9 15.4 33.6 34 16.5 49.6l-5.4-7.8 10.8-26.4Z"/><path class="trash-rust" d="m35.6 32 12.8-8.5-2.8 14.3c-4.6.1-7.8-1.8-10-5.8Z"/><path class="trash-line" d="M22 10 14.3 55M36 31.4l11.8 23.1M20.2 43.3 50 18.9"/></svg>`,
-    container: `<svg class="trash-illustration trash-container" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-fill" d="M9.5 21.8c13.9-3.1 29.2-3.1 45.1.1v26.5c-14.9 3.4-29.9 3.3-45.1-.2V21.8Z"/><path class="trash-shade" d="M11.9 24.8c12.5 2.8 25.9 2.8 40.2 0v8.9c-13.8 3.9-27.3 3.9-40.2.1v-9Z"/><path class="trash-rust" d="M18.8 38.5c8.5 2.8 16.7 2.9 24.6.4l1.5 8.2c-8.1 1.7-16.4 1.6-24.7-.2l-1.4-8.4Z"/><path class="trash-line" d="M19.5 21.1v28.7M32 20.7v29.7M44.6 21.1v28.7M10.2 32.6c14.8 3.6 29.4 3.6 43.9.1"/></svg>`,
+    microplastics: `<svg class="trash-illustration trash-microplastics" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><circle class="trash-dot" cx="15" cy="18" r="3"/><circle class="trash-dot shade" cx="28" cy="12" r="2"/><circle class="trash-dot" cx="45" cy="19" r="2.7"/><circle class="trash-dot shade" cx="53" cy="32" r="2"/><circle class="trash-dot" cx="35" cy="34" r="2.8"/><circle class="trash-dot shade" cx="19" cy="43" r="2.4"/><circle class="trash-dot" cx="44" cy="50" r="3"/><circle class="trash-dot shade" cx="28" cy="54" r="1.9"/><circle class="trash-dot" cx="11" cy="32" r="2"/></svg>`,
   };
   return svgs[type] || svgs.bottle;
 }

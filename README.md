@@ -43,16 +43,14 @@ http://127.0.0.1:4173/
 - Automatic flashlight cursor in Midnight, Abyssal, and Hadal zones
 - Progressive mobile tilt support for spotlight movement and zone navigation
 - Giant squid background pass in the Twilight Zone with a local NOAA hydrophone cue; the actual Giant Squid discovery remains in Midnight
-- Pollution collection loop with a small static set of filtered trash sprites plus minimal dark deep-zone debris, visible cleanup feedback, and zone mood response
+- Pollution collection loop with a small static set of readable illustrated pollutants, visible cleanup feedback, and zone mood response
 - Wrong-answer learning flow with correct-answer feedback, second attempt, and assisted logbook state
 - Logbook, creature detail panel, assisted IDs, and rarity filters
 - Tuned O2 economy with faster drain under deeper pressure and smaller assisted refill values
 - Normalized 100-point scoring across discovery, cleanup, streak, accuracy, and zone completion
 - Results screen with final rank, score stats, sonar usage, and zone-by-zone breakdown
 - Local art assets flattened into `assets/`
-- Surface pollution sprites from OpenGameArt's CC0 Trash Trawler / Pixel Art Lake Assets pack, filtered into a muted underwater palette
-- Lost fishing gear sprite from OpenGameArt's Fishing Game Assets Pixel Art pack, filtered and credited under OGA-BY 3.0
-- Minimal inline SVG pollution for deep-zone drum, microplastic cluster, mining debris, and waste container
+- Minimal inline SVG pollution set: bottle, tire, hook, drum, and microplastic cluster
 - Local audio assets in `assets/audio/`; active ambience is generated with Web Audio, and the squid easter egg uses a local NOAA cue so the demo is offline-safe and does not stream sound files at runtime
 
 ## Quick checklist
@@ -87,5 +85,3 @@ Breath mic requires `localhost` or HTTPS. If the HUD shows `Tap retry` or `Mic b
 
 - `assets/audio/sperm_whale_clicks.ogg`: "Sperm Whale Ordinary Clicks" from Wikimedia Commons, CC0.
 - `assets/audio/noaa_bloop.wav`, `assets/audio/noaa_calving.wav`, `assets/audio/noaa_tremor.wav`, `assets/audio/noaa_julia.wav`: NOAA PMEL Acoustics public sound examples.
-- `assets/pollution/bottle2idle.png`, `assets/pollution/boxidle.png`, `assets/pollution/tireidle.png`: Pixel Art Lake Assets / Trash Trawler by AmberFallStudio on OpenGameArt, CC0.
-- `assets/pollution/fishing-hook.png`: Fishing Game Assets Pixel Art by CraftPix.net 2D Game Assets on OpenGameArt, OGA-BY 3.0.
