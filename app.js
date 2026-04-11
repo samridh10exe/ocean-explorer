@@ -295,7 +295,7 @@ const creatureData = [
       "They feed on small crustaceans and scavenged particles drifting across the seafloor.",
     ],
     wrongAnswers: ["Hadal Amphipod", "Sea Angel"],
-    assetPath: "assets/hadal_snailfish.png",
+    assetPath: "assets/abyssal_snailfish.png",
     idleAnimation: "fish",
     bioColor: "var(--bio-blue)",
     points: 7,
