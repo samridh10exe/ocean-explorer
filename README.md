@@ -50,7 +50,7 @@ http://127.0.0.1:4173/
 - Normalized 100-point scoring across discovery, cleanup, streak, accuracy, and zone completion
 - Results screen with final rank, score stats, sonar usage, and zone-by-zone breakdown
 - Local art assets flattened into `assets/`
-- Local pollution PNG sprites in `assets/pollution/`
+- Muted inline SVG pollution illustrations tuned per ocean zone
 - Local audio assets in `assets/audio/`; active ambience is generated with Web Audio, and the squid easter egg uses a local NOAA cue so the demo is offline-safe and does not stream sound files at runtime
 
 ## Quick checklist

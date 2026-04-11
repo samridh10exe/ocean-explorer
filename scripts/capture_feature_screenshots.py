@@ -539,7 +539,7 @@ def capture(session: ChromeSession) -> None:
     session.eval(
         "__proof.zone('twilight', 76);"
         "__proof.addTrashSet('twilight');"
-        "__proof.note('<strong>DRIFTING CLEANUP TARGETS</strong><br>Trash is visible, clickable, and styled with local PNG pollution sprites.');"
+        "__proof.note('<strong>DRIFTING CLEANUP TARGETS</strong><br>Trash is visible, clickable, and styled as muted illustrated underwater debris.');"
     )
     session.screenshot("05-pollution-cleanup/01-drifting-trash-targets-visible.jpg")
 

@@ -16,7 +16,7 @@ These screenshots were captured from the running browser app at `1280x800`. Each
 ## Verification Notes
 
 - Sonar screenshots show only creature/lifeform returns; pollution is not highlighted by sonar.
-- Pollution screenshots use local `assets/pollution/*.png` sprites and include a visible waste counter increment from a click.
+- Pollution screenshots use muted inline illustrated debris and include a visible waste counter increment from a click.
 - Wrong-answer screenshots show the educational second-chance flow instead of removing the creature.
 - Results screenshots show the score breakdown judges may not reach during a short demo.
 

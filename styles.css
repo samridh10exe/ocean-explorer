@@ -1336,7 +1336,7 @@ body.is-transitioning #zone-stage {
   opacity: 0;
   pointer-events: auto;
   border-radius: 999px;
-  animation: pollution-fall var(--duration, 9s) linear forwards;
+  animation: pollution-fall var(--duration, 9s) cubic-bezier(0.32, 0.04, 0.66, 0.96) forwards;
   will-change: transform, opacity;
 }
 
@@ -1364,34 +1364,97 @@ body.is-transitioning #zone-stage {
 }
 
 .pollution-item svg {
-  fill: none;
-  stroke: var(--trash-color, rgba(244, 162, 97, 0.62));
+  overflow: visible;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 2.1;
-  filter:
-    drop-shadow(0 0 8px color-mix(in srgb, var(--trash-color, var(--bio-amber)) 22%, transparent))
-    drop-shadow(0 6px 8px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 7px 9px rgba(0, 0, 0, 0.32));
+  opacity: var(--trash-alpha, 0.72);
+  transform-origin: center;
+  will-change: transform, opacity;
 }
 
 .trash-fill {
-  fill: color-mix(in srgb, var(--trash-color, var(--bio-amber)) 26%, transparent);
-  stroke: color-mix(in srgb, var(--trash-color, var(--bio-amber)) 82%, #e0f7fa 8%);
+  fill: var(--trash-main, #77786f);
+  stroke: var(--trash-line, #2d302b);
+  stroke-width: 1.6;
 }
 
 .trash-shade {
-  fill: color-mix(in srgb, var(--trash-color, var(--bio-amber)) 14%, transparent);
+  fill: var(--trash-shade, #50534c);
   stroke: none;
+  opacity: 0.66;
 }
 
 .trash-line {
   fill: none;
-  stroke: color-mix(in srgb, var(--trash-color, var(--bio-amber)) 78%, #e0f7fa 12%);
+  stroke: var(--trash-line, #2d302b);
+  stroke-width: 1.8;
+  opacity: 0.7;
 }
 
 .trash-hole {
-  fill: rgba(0, 0, 0, 0.42);
-  stroke: color-mix(in srgb, var(--trash-color, var(--bio-amber)) 60%, transparent);
+  fill: rgba(0, 0, 0, 0.46);
+  stroke: var(--trash-line, #2d302b);
+  stroke-width: 1.5;
+}
+
+.trash-cap,
+.trash-knot {
+  fill: var(--trash-shade, #50534c);
+  stroke: var(--trash-line, #2d302b);
+  stroke-width: 1.3;
+}
+
+.trash-rope,
+.trash-net-line {
+  fill: none;
+  stroke: var(--trash-line, #252a25);
+  stroke-width: 2;
+  opacity: 0.7;
+}
+
+.trash-net-cloth {
+  fill: var(--trash-main, #5f675f);
+  opacity: 0.28;
+  stroke: var(--trash-line, #252a25);
+  stroke-width: 1.4;
+}
+
+.trash-rust {
+  fill: var(--trash-rust, #76523a);
+  opacity: 0.62;
+  stroke: none;
+}
+
+.trash-dot {
+  fill: var(--trash-main, #85877e);
+  opacity: 0.76;
+}
+
+.trash-dot.shade {
+  fill: var(--trash-shade, #62655e);
+  opacity: 0.58;
+}
+
+.pollution-item[data-type="bag"] svg {
+  animation: trash-bag-billow 3.8s ease-in-out infinite;
+}
+
+.pollution-item[data-type="ghost-net"] svg {
+  animation: trash-net-shear 5.8s ease-in-out infinite;
+}
+
+.pollution-item[data-type="line"] svg {
+  animation: trash-line-undulate 4.8s ease-in-out infinite;
+}
+
+.pollution-item[data-type="microplastics"] svg {
+  filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.24));
+}
+
+.pollution-item[data-type="oil"] svg {
+  opacity: 0.52;
+  mix-blend-mode: multiply;
 }
 
 .pollution-item__tag {
@@ -1399,29 +1462,34 @@ body.is-transitioning #zone-stage {
   left: 50%;
   bottom: -1.15rem;
   padding: 0.1rem 0.32rem;
-  border: 1px solid rgba(244, 162, 97, 0.26);
-  color: rgba(244, 162, 97, 0.74);
+  border: 1px solid rgba(180, 185, 170, 0.18);
+  color: rgba(205, 211, 196, 0.6);
   font-family: "Space Mono", "Courier New", monospace;
   font-size: 0.48rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  background: rgba(0, 0, 0, 0.44);
-  opacity: 0.72;
+  background: rgba(2, 6, 8, 0.52);
+  opacity: 0;
   transform: translateX(-50%);
   pointer-events: none;
+  transition: opacity 260ms var(--transition-ease), transform 260ms var(--transition-ease);
 }
 
 .pollution-item:hover {
-  transform: scale(1.06);
+  opacity: 0.96;
 }
 
 .pollution-item:hover svg,
 .pollution-item:focus-visible svg,
 .pollution-item:hover .pollution-item__img,
 .pollution-item:focus-visible .pollution-item__img {
-  filter:
-    drop-shadow(0 0 10px rgba(244, 162, 97, 0.45))
-    drop-shadow(0 0 20px rgba(0, 245, 212, 0.18));
+  filter: drop-shadow(0 9px 11px rgba(0, 0, 0, 0.38)) brightness(1.14);
+}
+
+.pollution-item:hover .pollution-item__tag,
+.pollution-item:focus-visible .pollution-item__tag {
+  opacity: 0.82;
+  transform: translateX(-50%) translateY(-0.15rem);
 }
 
 .pollution-item.is-collected {
@@ -1430,8 +1498,9 @@ body.is-transitioning #zone-stage {
 }
 
 .pollution-item.is-collected .pollution-item__tag {
-  color: var(--bio-green);
-  border-color: rgba(87, 204, 153, 0.42);
+  color: rgba(201, 213, 190, 0.86);
+  border-color: rgba(201, 213, 190, 0.34);
+  opacity: 0.9;
 }
 
 #hud-overlay {
@@ -2134,11 +2203,43 @@ body.is-transitioning #zone-stage {
   45% {
     opacity: 1;
     transform: translate3d(0, -0.35rem, 0) scale(1.18);
-    filter: drop-shadow(0 0 18px rgba(87, 204, 153, 0.76));
+    filter: brightness(1.2) drop-shadow(0 8px 12px rgba(0, 0, 0, 0.34));
   }
   100% {
     opacity: 0;
     transform: translate3d(0, -1rem, 0) scale(1.4);
+  }
+}
+
+@keyframes trash-bag-billow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scaleX(1) rotate(-1deg);
+    opacity: var(--trash-alpha, 0.5);
+  }
+  50% {
+    transform: translate3d(0.12rem, -0.18rem, 0) scaleX(1.08) rotate(2deg);
+    opacity: calc(var(--trash-alpha, 0.5) + 0.08);
+  }
+}
+
+@keyframes trash-net-shear {
+  0%,
+  100% {
+    transform: skewX(-2deg) rotate(-1deg);
+  }
+  50% {
+    transform: skewX(5deg) rotate(2deg);
+  }
+}
+
+@keyframes trash-line-undulate {
+  0%,
+  100% {
+    transform: rotate(-2deg) scaleX(1);
+  }
+  50% {
+    transform: rotate(3deg) scaleX(1.05);
   }
 }
 
