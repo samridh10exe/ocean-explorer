@@ -9,7 +9,7 @@ These screenshots were captured from the running browser app at `1280x800`. Each
 - `03-creature-trivia-reveal/` - trivia prompt, mid-animation reveal choreography, creature info panel.
 - `04-wrong-answer-assisted-logbook/` - wrong-answer feedback, assisted second attempt mid-reveal, assisted logbook state.
 - `05-pollution-cleanup/` - visible drifting trash targets, trash click/counter increment, cleansed zone feedback.
-- `06-dark-zone-flashlight-and-squid/` - Midnight flashlight with clickable trash and giant squid background pass.
+- `06-dark-zone-flashlight-and-squid/` - Midnight flashlight with clickable trash and Twilight giant squid background pass.
 - `07-abyssal-vs-hadal-atmosphere/` - visual difference between Abyssal and Hadal zones.
 - `08-results-and-score-breakdown/` - final rank screen and zone-by-zone score breakdown.
 

@@ -376,6 +376,9 @@ const BREATH_COOLDOWN_MS = 4600;
 const BREATH_OXYGEN_REWARD = 14;
 const ASSISTED_OXYGEN_REWARD = 6;
 const FLASHLIGHT_ZONES = new Set(["midnight", "abyssal", "hadal"]);
+const SQUID_PASS_ZONE = "twilight";
+const SQUID_PASS_DURATION_MS = 22000;
+const SQUID_PASS_AUDIO_PATH = "assets/audio/noaa_bloop.wav";
 
 const ambientAudioProfiles = {
   sunlight: {
@@ -487,6 +490,8 @@ const ui = {
   ambientNoiseSource: null,
   ambientRumbleOsc: null,
   ambientDriftOsc: null,
+  squidCueAudio: null,
+  squidPassTimer: 0,
   tiltTimer: 0,
   depthAnimationFrame: 0,
   loopFrame: 0,
@@ -616,7 +621,7 @@ function renderCreatures() {
       on(button, "click", () => handleCreatureClick(creature.id));
       layer.appendChild(button);
     });
-    if (zoneEl.dataset.zone === "midnight") {
+    if (zoneEl.dataset.zone === SQUID_PASS_ZONE) {
       renderLegendaryPass(layer);
     }
   });
@@ -1062,21 +1067,69 @@ function resumeAudioSystems() {
 }
 
 function updateHydrophoneForZone(zoneId) {
-  if (!state.started || !state.audioEnabled || !ui.hydrophoneContext) {
+  if (!state.started) {
+    return;
+  }
+
+  if (zoneId === SQUID_PASS_ZONE && !state.squidEasterEggShown) {
+    triggerSquidEasterEggPass();
+  }
+
+  if (!state.audioEnabled || !ui.hydrophoneContext) {
     return;
   }
 
   applyAmbientAudioProfile(zoneId);
-
-  if (zoneId === "midnight") {
-    const midnightZone = getZoneNode("midnight");
-    if (midnightZone && !state.squidEasterEggShown) {
-      state.squidEasterEggShown = true;
-      midnightZone.classList.add("is-squid-pass");
-      window.setTimeout(() => midnightZone.classList.remove("is-squid-pass"), 22000);
-    }
-  }
   startHydrophoneLoop();
+}
+
+function triggerSquidEasterEggPass() {
+  const passZone = getZoneNode(SQUID_PASS_ZONE);
+  if (!passZone) {
+    return;
+  }
+
+  state.squidEasterEggShown = true;
+  passZone.classList.add("is-squid-pass");
+  playSquidEasterEggCue();
+  clearTimeout(ui.squidPassTimer);
+  ui.squidPassTimer = window.setTimeout(() => {
+    passZone.classList.remove("is-squid-pass");
+    ui.squidPassTimer = 0;
+  }, SQUID_PASS_DURATION_MS);
+}
+
+function playSquidEasterEggCue() {
+  if (!state.audioEnabled) {
+    return;
+  }
+
+  try {
+    if (!ui.squidCueAudio) {
+      ui.squidCueAudio = new Audio(SQUID_PASS_AUDIO_PATH);
+      ui.squidCueAudio.preload = "auto";
+    }
+    ui.squidCueAudio.pause();
+    ui.squidCueAudio.currentTime = 0;
+    ui.squidCueAudio.volume = 0.42;
+    const playPromise = ui.squidCueAudio.play();
+    if (playPromise?.catch) {
+      playPromise.catch(() => {});
+    }
+  } catch (error) {
+    // Audio is optional; visual easter egg should never fail because sound is blocked.
+  }
+}
+
+function stopSquidEasterEggCue() {
+  clearTimeout(ui.squidPassTimer);
+  ui.squidPassTimer = 0;
+  refs.zones.forEach((zoneEl) => zoneEl.classList.remove("is-squid-pass"));
+  if (!ui.squidCueAudio) {
+    return;
+  }
+  ui.squidCueAudio.pause();
+  ui.squidCueAudio.currentTime = 0;
 }
 
 function startHydrophoneLoop() {
@@ -1784,6 +1837,7 @@ function finishDive() {
   cancelAnimationFrame(ui.loopFrame);
   zoneData.forEach((zone) => clearZonePollution(zone.id));
   stopHydrophoneLoop();
+  stopSquidEasterEggCue();
   stopAmbientAudio();
   stopBreathDetection();
   closeTriviaModal();
@@ -1834,6 +1888,7 @@ function restartGame() {
   state.logbookFilter = "all";
   clearSonarTimers();
   stopHydrophoneLoop();
+  stopSquidEasterEggCue();
   stopAmbientAudio();
   refs.endScreen.hidden = true;
   refs.introScreen.hidden = false;
@@ -1859,7 +1914,7 @@ function restartGame() {
       "is-reveal-burst",
       "is-miss-shock",
       "is-sonar-active",
-    "is-squid-pass"
+      "is-squid-pass"
     );
     zoneEl.querySelectorAll(".sonar-highlight, .sonar-pulse, .sonar-echo").forEach((node) => {
       if (node.classList.contains("sonar-pulse") || node.classList.contains("sonar-echo")) {

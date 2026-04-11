@@ -14,7 +14,7 @@ The full proof pack is in [`docs/feature-screenshots`](docs/feature-screenshots)
 | Trivia reveal choreography | <img src="docs/feature-screenshots/03-creature-trivia-reveal/02-dramatic-reveal-mid-animation.jpg" width="420" alt="Creature reveal animation"> |
 | Second chance and assisted logbook state | <img src="docs/feature-screenshots/04-wrong-answer-assisted-logbook/03-logbook-assisted-state.jpg" width="420" alt="Logbook showing assisted ID state"> |
 | Pollution cleanup counter and feedback | <img src="docs/feature-screenshots/05-pollution-cleanup/02-trash-pop-and-counter-increment.jpg" width="420" alt="Waste cleared counter incrementing after pollution click"> |
-| Midnight flashlight and giant squid pass | <img src="docs/feature-screenshots/06-dark-zone-flashlight-and-squid/02-giant-squid-background-pass.jpg" width="420" alt="Giant squid background pass in the Midnight zone"> |
+| Twilight giant squid pass and Midnight flashlight | <img src="docs/feature-screenshots/06-dark-zone-flashlight-and-squid/02-giant-squid-background-pass.jpg" width="420" alt="Giant squid background pass in the Twilight zone"> |
 | Abyssal vs Hadal atmosphere | <img src="docs/feature-screenshots/07-abyssal-vs-hadal-atmosphere/02-hadal-green-pressure-void.jpg" width="420" alt="Hadal pressure atmosphere"> |
 | Final rank and zone breakdown | <img src="docs/feature-screenshots/08-results-and-score-breakdown/01-final-rank-score.jpg" width="420" alt="Final rank and score breakdown screen"> |
 
@@ -42,7 +42,7 @@ http://127.0.0.1:4173/
 - Breath-to-refill O2 using Web Audio microphone detection, with bubble feedback when breath is detected
 - Automatic flashlight cursor in Midnight, Abyssal, and Hadal zones
 - Progressive mobile tilt support for spotlight movement and zone navigation
-- Giant squid background pass with procedural underwater audio in the Midnight Zone
+- Giant squid background pass in the Twilight Zone with a local NOAA hydrophone cue; the actual Giant Squid discovery remains in Midnight
 - Pollution collection loop with illustrated SVG cleanup targets, visible cleanup feedback, and zone mood response
 - Wrong-answer learning flow with correct-answer feedback, second attempt, and assisted logbook state
 - Logbook, creature detail panel, assisted IDs, and rarity filters
@@ -51,7 +51,7 @@ http://127.0.0.1:4173/
 - Results screen with final rank, score stats, sonar usage, and zone-by-zone breakdown
 - Local art assets flattened into `assets/`
 - Local pollution PNG sprites in `assets/pollution/`
-- Local audio reference assets in `assets/audio/`; active ambience is generated with Web Audio so the demo is offline-safe and does not stream sound files at runtime
+- Local audio assets in `assets/audio/`; active ambience is generated with Web Audio, and the squid easter egg uses a local NOAA cue so the demo is offline-safe and does not stream sound files at runtime
 
 ## Quick checklist
 
@@ -70,7 +70,7 @@ http://127.0.0.1:4173/
 - [ ] Confirm O2 drains and refills
 - [ ] Confirm O2 drains faster in deeper zones than at the surface
 - [ ] Confirm Abyssal and Hadal look distinct, with Hadal showing green-black pressure atmosphere and slower larger marine snow
-- [ ] Enter Midnight and confirm the giant squid pass is visible above the background atmosphere
+- [ ] Enter Twilight and confirm the giant squid pass is visible above the background atmosphere; later, confirm Giant Squid discovery still happens in Midnight
 - [ ] Confirm underwater ambience starts after user interaction if browser audio is allowed; it should feel muffled/low-pass, not click-heavy
 - [ ] Confirm the end screen appears when O2 reaches 0 and shows all five zone result rows
 - [ ] Check Chrome DevTools Console for zero errors
@@ -78,7 +78,7 @@ http://127.0.0.1:4173/
 
 ## Audio notes and credits
 
-The active in-app soundscape is procedural Web Audio: low-passed current noise, low rumble, soft bubbles near the surface, and slower pressure/creature tones deeper down. This avoids demo-time network dependency and avoids sharp click-heavy samples.
+The active in-app soundscape is procedural Web Audio: low-passed current noise, low rumble, soft bubbles near the surface, and slower pressure/creature tones deeper down. The Twilight squid pass also plays a local hydrophone-style cue. This avoids demo-time network dependency and avoids sharp click-heavy samples.
 
 - `assets/audio/sperm_whale_clicks.ogg`: "Sperm Whale Ordinary Clicks" from Wikimedia Commons, CC0.
 - `assets/audio/noaa_bloop.wav`, `assets/audio/noaa_calving.wav`, `assets/audio/noaa_tremor.wav`, `assets/audio/noaa_julia.wav`: NOAA PMEL Acoustics public sound examples.

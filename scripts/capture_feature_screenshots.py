@@ -575,10 +575,10 @@ def capture(session: ChromeSession) -> None:
     session.screenshot("06-dark-zone-flashlight-and-squid/01-flashlight-with-clickable-trash.jpg")
 
     session.eval(
-        "__proof.zone('midnight', 58);"
+        "__proof.zone('twilight', 72);"
         "handlePointerMove({clientX:650, clientY:350});"
-        "getZoneNode('midnight').classList.add('is-squid-pass');"
-        "__proof.note('<strong>LEGENDARY PASS</strong><br>Massive squid silhouette crosses above the darkness layer with a cyan hydrophone glow.');"
+        "getZoneNode('twilight').classList.add('is-squid-pass');"
+        "__proof.note('<strong>LEGENDARY PASS</strong><br>Twilight keeps enough ambient light for the massive squid silhouette and local hydrophone cue to read clearly.');"
     )
     session.screenshot("06-dark-zone-flashlight-and-squid/02-giant-squid-background-pass.jpg")
 
