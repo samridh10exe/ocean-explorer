@@ -51,6 +51,7 @@ http://127.0.0.1:4173/
 - Results screen with final rank, score stats, sonar usage, and zone-by-zone breakdown
 - Local art assets flattened into `assets/`
 - Surface pollution sprites from OpenGameArt's CC0 Trash Trawler / Pixel Art Lake Assets pack, filtered into a muted underwater palette
+- Lost fishing gear sprite from OpenGameArt's Fishing Game Assets Pixel Art pack, filtered and credited under OGA-BY 3.0
 - Muted inline SVG pollution illustrations for deep-zone debris where free matching assets are not available
 - Local audio assets in `assets/audio/`; active ambience is generated with Web Audio, and the squid easter egg uses a local NOAA cue so the demo is offline-safe and does not stream sound files at runtime
 
@@ -87,3 +88,4 @@ Breath mic requires `localhost` or HTTPS. If the HUD shows `Tap retry` or `Mic b
 - `assets/audio/sperm_whale_clicks.ogg`: "Sperm Whale Ordinary Clicks" from Wikimedia Commons, CC0.
 - `assets/audio/noaa_bloop.wav`, `assets/audio/noaa_calving.wav`, `assets/audio/noaa_tremor.wav`, `assets/audio/noaa_julia.wav`: NOAA PMEL Acoustics public sound examples.
 - `assets/pollution/bottle2idle.png`, `assets/pollution/boxidle.png`, `assets/pollution/tireidle.png`: Pixel Art Lake Assets / Trash Trawler by AmberFallStudio on OpenGameArt, CC0.
+- `assets/pollution/fishing-hook.png`: Fishing Game Assets Pixel Art by CraftPix.net 2D Game Assets on OpenGameArt, OGA-BY 3.0.

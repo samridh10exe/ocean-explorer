@@ -24,7 +24,7 @@ const zoneData = [
       "The glow from above begins to fail. Bioluminescent sparks appear, and each reveal feels like turning on a light in the dark.",
     particleType: "bio",
     particleCount: 36,
-    pollutionTypes: ["ghost-net", "line", "tire", "gear"],
+    pollutionTypes: ["gear", "line", "tire", "gear"],
     oxygenDrainMultiplier: 0.94,
   },
   {
@@ -346,7 +346,6 @@ const pollutionPalette = {
   tire: { main: "#383b35", shade: "#20241f", line: "#111410", alpha: 0.78 },
   bag: { main: "#d8d7ca", shade: "#a8aaa1", line: "#6f756e", alpha: 0.5 },
   line: { main: "#726d63", shade: "#4c4a45", line: "#2e302e", alpha: 0.72 },
-  "ghost-net": { main: "#5f675f", shade: "#3f473f", line: "#222a25", alpha: 0.48 },
   gear: { main: "#6d7069", shade: "#464941", line: "#252924", alpha: 0.78 },
   drum: { main: "#6f7047", shade: "#4c3f2d", line: "#27281d", rust: "#8a4f34", alpha: 0.82 },
   microplastics: { main: "#898b82", shade: "#63665e", line: "#3f443d", alpha: 0.68 },
@@ -360,6 +359,7 @@ const pollutionSpritePaths = {
   bottle: "assets/pollution/bottle2idle.png",
   "takeout-box": "assets/pollution/boxidle.png",
   tire: "assets/pollution/tireidle.png",
+  gear: "assets/pollution/fishing-hook.png",
 };
 
 const pollutionZoneSettings = {
@@ -375,7 +375,6 @@ const pollutionTypeSettings = {
   "takeout-box": { sizeBoost: 1.08 },
   tire: { sizeBoost: 1.02 },
   bag: { sizeBoost: 1.15 },
-  "ghost-net": { sizeBoost: 1.35 },
   line: { sizeBoost: 1.1 },
   gear: { sizeBoost: 0.95 },
   drum: { sizeBoost: 1.1 },
@@ -2073,7 +2072,6 @@ function pollutionSvg(type) {
     bottle: `<svg class="trash-illustration trash-bottle" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-fill" d="M26 6h12v7l5 6-2 35c-.2 3.6-2.7 5.8-6.2 5.8h-7.4c-3.5 0-5.9-2.2-6.1-5.8L19 19l5-6V6h2Z"/><path class="trash-shade" d="M27 16h11.5l3.1 4.4-.5 8.8c-5.9-1.2-11.1-.4-15.8 2.5l-.7-11.1L27 16Z"/><path class="trash-cap" d="M25 3.8h14v5.4H25z"/><path class="trash-line" d="M23.5 24.5c6.7 2.8 12.7 2.8 18.1.1M24.1 43.8c5.2-1.8 10.6-1.9 16.4-.2"/></svg>`,
     bag: `<svg class="trash-illustration trash-bag" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-fill trash-bag-body" d="M15.7 20.5c6-2.5 9.5-1 13.2-.9 4.9.1 9-2.9 17.1.8 2.4 13.8 4.8 24.1 7.6 34.2-11 4.2-26.9 4.5-41.3.2 1.2-11 2.1-21.8 3.4-34.3Z"/><path class="trash-shade" d="M20 28c8.5-4.2 19.4-3.6 28.7 4.2l3.2 19.9c-10.4 3.2-23.9 3.1-36.2.1L20 28Z"/><path class="trash-line" d="M23.3 21.2c.5-7.5 4.1-11.5 9-11.4 4.7.1 7.8 4 8.2 11.7M22.5 38.2c7.3-3.2 15.4-2.3 23.3 2.6"/></svg>`,
     line: `<svg class="trash-illustration trash-line-tangle" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-rope" d="M8.5 18.5c11.8 8.8 23.5 7.8 46.8-1.8M10.2 49.7c11.2-18.7 31.5-18.1 44.7.8M8.4 34.5c18.6-13.5 30.2 17.9 47.8-2.9M17 15c8 9.5 6.7 22.9-4.3 34.2"/><circle class="trash-knot" cx="17" cy="18" r="3.3"/><circle class="trash-knot" cx="49" cy="49" r="3.1"/></svg>`,
-    "ghost-net": `<svg class="trash-illustration trash-ghost-net" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-net-cloth" d="M8.5 14.2c13.3-5.8 27.2-3.3 47.2 1.7-1.7 12.1-1.3 25.4-.1 38.4-14.5 3.8-30.5.9-47.1-3.1 1.2-12.3 1.5-24.6 0-37Z"/><path class="trash-net-line" d="M12 15.3 52.7 53M25.2 11.8l30 28.7M52.8 16.2 11.2 50.3M38 13.1 9.5 37.7M20.4 12.4c.2 13.5-.1 26.8-.8 40.1M38.6 13.4c-.7 13.7-.9 27.4-.4 41M9.3 26.4c15.8 2.7 31 3.4 45.6 2.2M8.9 41.5c16.7 4.2 32.3 4.8 46.4 1.8"/></svg>`,
     gear: `<svg class="trash-illustration trash-gear" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><path class="trash-fill" d="M30.2 7.5h4.3l3.6 7 5.8 1.8 6.7-3 4.5 5-3.4 6.6 2 5.6 6.7 3.7v5.5l-6.9 3.2-2.3 5.8 3.2 6.7-4.8 4.5-6.5-3.5-6 2.2-3.4 6.8h-4.4l-3.3-6.9-5.8-2-6.7 3.1-4.6-5 3.4-6.4-2.1-5.9-6.6-3.5v-5.5l6.7-3.4 2-5.8-3.1-6.6 4.9-4.6 6.3 3.3 6.2-2 3.5-6.7Z"/><circle class="trash-hole" cx="32" cy="34" r="8.2"/><path class="trash-line" d="M32 19v6M32 43v6M17 34h6M41 34h6"/></svg>`,
     drum: `<svg class="trash-illustration trash-drum" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><ellipse class="trash-fill" cx="32" cy="13.5" rx="15" ry="6"/><path class="trash-fill" d="M17 13.5c1.1 7.9 1.1 28.9 0 36.2 8 6 22 6 30 0-1.1-7.3-1.1-28.3 0-36.2-7.9 4.2-22.1 4.2-30 0Z"/><path class="trash-shade" d="M18.3 17.7c7.7 3.4 19.7 3.3 27.5-.2l.4 9.7c-7.6 4.5-19.1 4.4-28.3.2l.4-9.7Z"/><path class="trash-rust" d="M22.5 33.5c8.7 1.8 14.8 1.6 22.4-.5l.3 5.8c-7.8 2.2-14.7 2.3-23.2.4l.5-5.7Z"/><path class="trash-line" d="M18.4 27.2c8.9 3.9 18.2 3.8 27.3 0M18.2 45.3c8.5 4.2 18.1 4.2 27.7 0"/></svg>`,
     microplastics: `<svg class="trash-illustration trash-microplastics" viewBox="0 0 64 64" style="${palette}" aria-hidden="true"><circle class="trash-dot" cx="15" cy="18" r="2.8"/><circle class="trash-dot shade" cx="28" cy="12" r="1.7"/><circle class="trash-dot" cx="45" cy="19" r="2.4"/><circle class="trash-dot shade" cx="53" cy="32" r="1.8"/><circle class="trash-dot" cx="35" cy="34" r="2.6"/><circle class="trash-dot shade" cx="19" cy="43" r="2.1"/><circle class="trash-dot" cx="44" cy="50" r="2.9"/><circle class="trash-dot shade" cx="28" cy="54" r="1.5"/><circle class="trash-dot" cx="11" cy="32" r="1.6"/></svg>`,

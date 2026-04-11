@@ -319,10 +319,10 @@ HELPER_JS = """
         this.trash(zoneId, 'takeout-box', '36%', '67%', '4.3rem', '-14deg');
         return;
       }
-      this.trash(zoneId, 'ghost-net', '30%', '34%', '4.8rem', '8deg');
+      this.trash(zoneId, 'gear', '30%', '34%', '4.2rem', '8deg');
       this.trash(zoneId, 'line', '48%', '47%', '4.2rem', '-18deg');
-      this.trash(zoneId, 'gear', '64%', '30%', '4.8rem', '2deg');
-      this.trash(zoneId, 'ghost-net', '76%', '57%', '4.6rem', '-10deg');
+      this.trash(zoneId, 'tire', '64%', '30%', '4.6rem', '2deg');
+      this.trash(zoneId, 'gear', '76%', '57%', '4.2rem', '-10deg');
       this.trash(zoneId, 'line', '37%', '66%', '3.8rem', '16deg');
     },
 

@@ -1389,6 +1389,16 @@ body.is-transitioning #zone-stage {
   opacity: 0.68;
 }
 
+.pollution-item[data-type="gear"] .pollution-item__sprite {
+  filter:
+    saturate(0.18)
+    brightness(0.58)
+    contrast(0.95)
+    hue-rotate(165deg)
+    drop-shadow(0 7px 9px rgba(0, 0, 0, 0.34));
+  opacity: 0.78;
+}
+
 .pollution-item__img {
   object-fit: contain;
   filter:
@@ -1438,19 +1448,11 @@ body.is-transitioning #zone-stage {
   stroke-width: 1.3;
 }
 
-.trash-rope,
-.trash-net-line {
+.trash-rope {
   fill: none;
   stroke: var(--trash-line, #252a25);
   stroke-width: 2;
   opacity: 0.7;
-}
-
-.trash-net-cloth {
-  fill: var(--trash-main, #5f675f);
-  opacity: 0.28;
-  stroke: var(--trash-line, #252a25);
-  stroke-width: 1.4;
 }
 
 .trash-rust {
@@ -1471,10 +1473,6 @@ body.is-transitioning #zone-stage {
 
 .pollution-item[data-type="bag"] svg {
   animation: trash-bag-billow 3.8s ease-in-out infinite;
-}
-
-.pollution-item[data-type="ghost-net"] svg {
-  animation: trash-net-shear 5.8s ease-in-out infinite;
 }
 
 .pollution-item[data-type="line"] svg {
@@ -2272,16 +2270,6 @@ body.is-transitioning #zone-stage {
   50% {
     transform: translate3d(0.12rem, -0.18rem, 0) scaleX(1.08) rotate(2deg);
     opacity: calc(var(--trash-alpha, 0.5) + 0.08);
-  }
-}
-
-@keyframes trash-net-shear {
-  0%,
-  100% {
-    transform: skewX(-2deg) rotate(-1deg);
-  }
-  50% {
-    transform: skewX(5deg) rotate(2deg);
   }
 }
 
