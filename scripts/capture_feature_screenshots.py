@@ -313,16 +313,14 @@ HELPER_JS = """
       clearZonePollution(zoneId);
       if (zoneId === 'sunlight') {
         this.trash(zoneId, 'bottle', '28%', '34%', '4.6rem', '-8deg');
-        this.trash(zoneId, 'gear', '45%', '49%', '4.4rem', '8deg');
+        this.trash(zoneId, 'bag', '47%', '48%', '4.5rem', '8deg');
         this.trash(zoneId, 'tire', '62%', '32%', '4.7rem', '2deg');
-        this.trash(zoneId, 'bottle', '75%', '58%', '4.2rem', '13deg');
-        this.trash(zoneId, 'drum', '36%', '67%', '4.5rem', '-10deg');
+        this.trash(zoneId, 'bottle', '75%', '58%', '4.2rem', '10deg');
         return;
       }
-      this.trash(zoneId, 'gear', '30%', '34%', '4.2rem', '8deg');
+      this.trash(zoneId, 'bag', '30%', '34%', '4.2rem', '8deg');
       this.trash(zoneId, 'bottle', '48%', '47%', '4.2rem', '-12deg');
       this.trash(zoneId, 'tire', '64%', '30%', '4.6rem', '2deg');
-      this.trash(zoneId, 'gear', '76%', '57%', '4.2rem', '-10deg');
       this.trash(zoneId, 'drum', '37%', '66%', '4.2rem', '8deg');
     },
 
