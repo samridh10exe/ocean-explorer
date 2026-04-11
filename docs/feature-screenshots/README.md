@@ -19,3 +19,7 @@ These screenshots were captured from the running browser app at `1280x800`. Each
 - Pollution screenshots use local `assets/pollution/*.png` sprites and include a visible waste counter increment from a click.
 - Wrong-answer screenshots show the educational second-chance flow instead of removing the creature.
 - Results screenshots show the score breakdown judges may not reach during a short demo.
+
+## Regenerate
+
+Run `python3 scripts/capture_feature_screenshots.py` from the repo root. The script launches a local server and clean headless Chrome session, disables zone-transition timing during capture, and freezes active effects at their clearest proof frame. It expects Chrome/Chromium and the Python `websocket-client` package.
