@@ -8,6 +8,7 @@ import json
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -20,6 +21,7 @@ OUT = ROOT / "docs" / "feature-screenshots"
 HTTP_PORT = 4175
 CDP_PORT = 9334
 VIEWPORT = {"width": 1280, "height": 800, "deviceScaleFactor": 1, "mobile": False}
+PROFILE_DIR = Path(tempfile.mkdtemp(prefix="deepdive-feature-screenshot-chrome-"))
 
 
 PROOF_CSS = """
@@ -29,6 +31,11 @@ body.screenshot-proof .zone__content {
 }
 
 body.screenshot-proof #zone-stage {
+  transition: none !important;
+}
+
+body.screenshot-proof #logbook-panel,
+body.screenshot-proof #creature-panel {
   transition: none !important;
 }
 
@@ -258,6 +265,8 @@ HELPER_JS = """
       refs.sonarButton.disabled = false;
       refs.sonarButton.classList.remove('is-cooling');
       refs.sonarStatus.textContent = 'SONAR READY';
+      closeLogbook();
+      hideCreaturePanel();
       renderLogbook();
       updateHud();
     },
@@ -302,6 +311,14 @@ HELPER_JS = """
 
     addTrashSet(zoneId) {
       clearZonePollution(zoneId);
+      if (zoneId === 'sunlight') {
+        this.trash(zoneId, 'bottle', '28%', '34%', '4.6rem', '-8deg');
+        this.trash(zoneId, 'takeout-box', '45%', '49%', '4.8rem', '8deg');
+        this.trash(zoneId, 'tire', '62%', '32%', '4.7rem', '2deg');
+        this.trash(zoneId, 'bottle', '75%', '58%', '4.2rem', '13deg');
+        this.trash(zoneId, 'takeout-box', '36%', '67%', '4.3rem', '-14deg');
+        return;
+      }
       this.trash(zoneId, 'ghost-net', '30%', '34%', '4.8rem', '8deg');
       this.trash(zoneId, 'line', '48%', '47%', '4.2rem', '-18deg');
       this.trash(zoneId, 'gear', '64%', '30%', '4.8rem', '2deg');
@@ -425,7 +442,7 @@ def launch() -> tuple[subprocess.Popen, subprocess.Popen]:
             "--window-size=1280,800",
             "--disable-gpu",
             "--no-sandbox",
-            "--user-data-dir=/tmp/deepdive-feature-screenshot-chrome",
+            f"--user-data-dir={PROFILE_DIR}",
             "about:blank",
         ],
         stdout=subprocess.DEVNULL,
@@ -537,15 +554,15 @@ def capture(session: ChromeSession) -> None:
     session.screenshot("04-wrong-answer-assisted-logbook/03-logbook-assisted-state.jpg")
 
     session.eval(
-        "__proof.zone('twilight', 76);"
-        "__proof.addTrashSet('twilight');"
-        "__proof.note('<strong>DRIFTING CLEANUP TARGETS</strong><br>Trash is visible, clickable, and styled as muted illustrated underwater debris.');"
+        "__proof.zone('sunlight', 92);"
+        "__proof.addTrashSet('sunlight');"
+        "__proof.note('<strong>DRIFTING CLEANUP TARGETS</strong><br>CC0 floating-trash sprites are desaturated into murky ocean debris.');"
     )
     session.screenshot("05-pollution-cleanup/01-drifting-trash-targets-visible.jpg")
 
     session.eval(
-        "__proof.zone('twilight', 76);"
-        "__proof.addTrashSet('twilight');"
+        "__proof.zone('sunlight', 92);"
+        "__proof.addTrashSet('sunlight');"
         "document.querySelector('.pollution-item').click();"
         "__proof.note('<strong>CLEANUP POP</strong><br>Clicked trash bursts while Waste Cleared and Score increment in the HUD.');"
     )
@@ -553,13 +570,13 @@ def capture(session: ChromeSession) -> None:
     session.screenshot("05-pollution-cleanup/02-trash-pop-and-counter-increment.jpg")
 
     session.eval(
-        "__proof.zone('twilight', 76);"
-        "__proof.addTrashSet('twilight');"
+        "__proof.zone('sunlight', 92);"
+        "__proof.addTrashSet('sunlight');"
         "state.pollutionCollected = 5;"
-        "state.zonePollutionCollected.twilight = 5;"
+        "state.zonePollutionCollected.sunlight = 5;"
         "computeScore();"
         "updateHud();"
-        "getZoneNode('twilight').classList.add('is-cleansed');"
+        "getZoneNode('sunlight').classList.add('is-cleansed');"
         "__proof.note('<strong>ZONE CLEANSED</strong><br>After several collections the zone receives cleaner/brighter visual feedback.');"
     )
     session.screenshot("05-pollution-cleanup/03-cleansed-zone-feedback.jpg")
@@ -634,6 +651,7 @@ def main() -> int:
                     process.wait(timeout=3)
                 except subprocess.TimeoutExpired:
                     process.kill()
+        shutil.rmtree(PROFILE_DIR, ignore_errors=True)
 
 
 if __name__ == "__main__":

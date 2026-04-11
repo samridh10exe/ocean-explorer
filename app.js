@@ -10,7 +10,7 @@ const zoneData = [
       "Light still reaches this layer. Caustic beams flicker overhead, and recognizable silhouettes move through clear blue water.",
     particleType: "surface",
     particleCount: 34,
-    pollutionTypes: ["bottle", "bag", "bottle", "bag", "line"],
+    pollutionTypes: ["bottle", "takeout-box", "bottle", "tire", "takeout-box", "line"],
     oxygenDrainMultiplier: 0.72,
   },
   {
@@ -24,7 +24,7 @@ const zoneData = [
       "The glow from above begins to fail. Bioluminescent sparks appear, and each reveal feels like turning on a light in the dark.",
     particleType: "bio",
     particleCount: 36,
-    pollutionTypes: ["ghost-net", "line", "bag", "gear"],
+    pollutionTypes: ["ghost-net", "line", "tire", "gear"],
     oxygenDrainMultiplier: 0.94,
   },
   {
@@ -342,6 +342,8 @@ const creatureData = [
 
 const pollutionPalette = {
   bottle: { main: "#8d9188", shade: "#5d625d", line: "#343a36", alpha: 0.76 },
+  "takeout-box": { main: "#878a80", shade: "#5b5d55", line: "#30332e", alpha: 0.76 },
+  tire: { main: "#383b35", shade: "#20241f", line: "#111410", alpha: 0.78 },
   bag: { main: "#d8d7ca", shade: "#a8aaa1", line: "#6f756e", alpha: 0.5 },
   line: { main: "#726d63", shade: "#4c4a45", line: "#2e302e", alpha: 0.72 },
   "ghost-net": { main: "#5f675f", shade: "#3f473f", line: "#222a25", alpha: 0.48 },
@@ -354,6 +356,12 @@ const pollutionPalette = {
   oil: { main: "#24251f", shade: "#0f1110", line: "#050606", alpha: 0.68 },
 };
 
+const pollutionSpritePaths = {
+  bottle: "assets/pollution/bottle2idle.png",
+  "takeout-box": "assets/pollution/boxidle.png",
+  tire: "assets/pollution/tireidle.png",
+};
+
 const pollutionZoneSettings = {
   sunlight: { initial: 8, respawn: 360, duration: [8.5, 12.5], size: [3.2, 5.0], drift: [-10, 14] },
   twilight: { initial: 5, respawn: 680, duration: [12.5, 17.5], size: [3.4, 5.4], drift: [-14, 10] },
@@ -363,6 +371,9 @@ const pollutionZoneSettings = {
 };
 
 const pollutionTypeSettings = {
+  bottle: { sizeBoost: 1.05 },
+  "takeout-box": { sizeBoost: 1.08 },
+  tire: { sizeBoost: 1.02 },
   bag: { sizeBoost: 1.15 },
   "ghost-net": { sizeBoost: 1.35 },
   line: { sizeBoost: 1.1 },
@@ -2042,6 +2053,10 @@ function createParticles(zoneEl, zone) {
 }
 
 function pollutionAsset(type) {
+  const spritePath = pollutionSpritePaths[type];
+  if (spritePath) {
+    return `<span class="pollution-item__sprite" style="--sprite-url:url('${spritePath}')" aria-hidden="true"></span>`;
+  }
   return pollutionSvg(type);
 }
 
