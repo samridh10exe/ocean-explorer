@@ -69,7 +69,7 @@ http://127.0.0.1:4173/
 - [ ] Open the logbook and test Common/Rare/Legendary filters
 - [ ] Confirm O2 drains and refills
 - [ ] Confirm O2 drains faster in deeper zones than at the surface
-- [ ] Confirm Abyssal has 2 discoverable creatures: Basket Star and Sea Pig
+- [ ] Confirm Abyssal has 3 discoverable creatures: Basket Star, Sea Pig, and Abyssal Snailfish
 - [ ] Confirm Abyssal and Hadal look distinct, with Hadal showing green-black pressure atmosphere and slower larger marine snow
 - [ ] Enter Twilight and confirm the giant squid pass is visible above the background atmosphere; later, confirm Giant Squid discovery still happens in Midnight
 - [ ] Confirm underwater ambience starts after user interaction if browser audio is allowed; it should feel muffled/low-pass, not click-heavy
