@@ -43,7 +43,7 @@ http://127.0.0.1:4173/
 - Automatic flashlight cursor in Midnight, Abyssal, and Hadal zones
 - Progressive mobile tilt support for spotlight movement and zone navigation
 - Giant squid background pass in the Twilight Zone with a local NOAA hydrophone cue; the actual Giant Squid discovery remains in Midnight
-- Pollution collection loop with CC0 floating-trash sprites near the surface, darker SVG debris in deep zones, visible cleanup feedback, and zone mood response
+- Pollution collection loop with a small static set of filtered trash sprites plus minimal dark deep-zone debris, visible cleanup feedback, and zone mood response
 - Wrong-answer learning flow with correct-answer feedback, second attempt, and assisted logbook state
 - Logbook, creature detail panel, assisted IDs, and rarity filters
 - Tuned O2 economy with faster drain under deeper pressure and smaller assisted refill values
@@ -52,7 +52,7 @@ http://127.0.0.1:4173/
 - Local art assets flattened into `assets/`
 - Surface pollution sprites from OpenGameArt's CC0 Trash Trawler / Pixel Art Lake Assets pack, filtered into a muted underwater palette
 - Lost fishing gear sprite from OpenGameArt's Fishing Game Assets Pixel Art pack, filtered and credited under OGA-BY 3.0
-- Muted inline SVG pollution illustrations for deep-zone debris where free matching assets are not available
+- Minimal inline SVG pollution for deep-zone drum, microplastic cluster, mining debris, and waste container
 - Local audio assets in `assets/audio/`; active ambience is generated with Web Audio, and the squid easter egg uses a local NOAA cue so the demo is offline-safe and does not stream sound files at runtime
 
 ## Quick checklist

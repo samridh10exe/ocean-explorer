@@ -1048,6 +1048,13 @@ body.is-transitioning #zone-stage {
   pointer-events: auto;
 }
 
+.creature::before {
+  content: "";
+  position: absolute;
+  inset: var(--hitbox-inset, 0);
+  pointer-events: auto;
+}
+
 .creature:focus-visible {
   outline: none;
 }
@@ -1084,6 +1091,10 @@ body.is-transitioning #zone-stage {
   transition: opacity 260ms var(--transition-ease), transform 260ms var(--transition-ease);
 }
 
+.creature__hint::before {
+  pointer-events: none;
+}
+
 .zone.has-flashlight .creature__hint {
   opacity: 0.92;
   border-color: rgba(76, 201, 240, 0.7);
@@ -1110,7 +1121,7 @@ body.is-transitioning #zone-stage {
     drop-shadow(0 0 18px rgba(76, 201, 240, 0.55));
 }
 
-.creature.sonar-highlight::before {
+.creature.sonar-highlight .creature__hint::before {
   content: "";
   position: absolute;
   inset: -12%;
@@ -1177,7 +1188,7 @@ body.is-transitioning #zone-stage {
   pointer-events: none;
 }
 
-.creature.is-spotlit::before {
+.creature.is-spotlit .creature__hint::before {
   content: "";
   position: absolute;
   inset: -24%;
@@ -1471,21 +1482,12 @@ body.is-transitioning #zone-stage {
   opacity: 0.58;
 }
 
-.pollution-item[data-type="bag"] svg {
-  animation: trash-bag-billow 3.8s ease-in-out infinite;
-}
-
 .pollution-item[data-type="line"] svg {
   animation: trash-line-undulate 4.8s ease-in-out infinite;
 }
 
 .pollution-item[data-type="microplastics"] svg {
   filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.24));
-}
-
-.pollution-item[data-type="oil"] svg {
-  opacity: 0.52;
-  mix-blend-mode: multiply;
 }
 
 .pollution-item__tag {
@@ -2225,14 +2227,14 @@ body.is-transitioning #zone-stage {
 @keyframes pollution-fall {
   0% {
     opacity: 0;
-    transform: translate3d(0, -8vh, 0) rotate(0deg);
+    transform: translate3d(0, -8vh, 0) rotate(var(--tilt, 0deg));
   }
   8% {
     opacity: 0.9;
   }
   100% {
     opacity: 0.72;
-    transform: translate3d(var(--drift, 0vw), 120vh, 0) rotate(var(--spin, 90deg));
+    transform: translate3d(var(--drift, 0vw), 120vh, 0) rotate(var(--tilt, 0deg));
   }
 }
 
@@ -2258,18 +2260,6 @@ body.is-transitioning #zone-stage {
   }
   100% {
     background-position: 100% 0;
-  }
-}
-
-@keyframes trash-bag-billow {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scaleX(1) rotate(-1deg);
-    opacity: var(--trash-alpha, 0.5);
-  }
-  50% {
-    transform: translate3d(0.12rem, -0.18rem, 0) scaleX(1.08) rotate(2deg);
-    opacity: calc(var(--trash-alpha, 0.5) + 0.08);
   }
 }
 
