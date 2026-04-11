@@ -69,6 +69,7 @@ http://127.0.0.1:4173/
 - [ ] Open the logbook and test Common/Rare/Legendary filters
 - [ ] Confirm O2 drains and refills
 - [ ] Confirm O2 drains faster in deeper zones than at the surface
+- [ ] Confirm Abyssal has 2 discoverable creatures: Basket Star and Sea Pig
 - [ ] Confirm Abyssal and Hadal look distinct, with Hadal showing green-black pressure atmosphere and slower larger marine snow
 - [ ] Enter Twilight and confirm the giant squid pass is visible above the background atmosphere; later, confirm Giant Squid discovery still happens in Midnight
 - [ ] Confirm underwater ambience starts after user interaction if browser audio is allowed; it should feel muffled/low-pass, not click-heavy
@@ -79,6 +80,8 @@ http://127.0.0.1:4173/
 ## Audio notes and credits
 
 The active in-app soundscape is procedural Web Audio: low-passed current noise, low rumble, soft bubbles near the surface, and slower pressure/creature tones deeper down. The Twilight squid pass also plays a local hydrophone-style cue. This avoids demo-time network dependency and avoids sharp click-heavy samples.
+
+Breath mic requires `localhost` or HTTPS. If the HUD shows `Tap retry` or `Mic blocked`, click the Breath Mic chip after allowing microphone permission.
 
 - `assets/audio/sperm_whale_clicks.ogg`: "Sperm Whale Ordinary Clicks" from Wikimedia Commons, CC0.
 - `assets/audio/noaa_bloop.wav`, `assets/audio/noaa_calving.wav`, `assets/audio/noaa_tremor.wav`, `assets/audio/noaa_julia.wav`: NOAA PMEL Acoustics public sound examples.
