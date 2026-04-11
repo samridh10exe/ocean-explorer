@@ -370,8 +370,8 @@ const pollutionAssetPaths = {
 
 const SONAR_ACTIVE_MS = 1700;
 const SONAR_COOLDOWN_MS = 4200;
-const BREATH_THRESHOLD = 0.115;
-const BREATH_HOLD_MS = 520;
+const BREATH_THRESHOLD = 0.075;
+const BREATH_HOLD_MS = 360;
 const BREATH_COOLDOWN_MS = 4600;
 const BREATH_OXYGEN_REWARD = 14;
 const ASSISTED_OXYGEN_REWARD = 6;
@@ -572,6 +572,7 @@ function bindStaticEvents() {
   on(refs.zoneStage, "transitionend", handleTransitionEnd);
   on(refs.triviaClose, "click", closeTriviaModal);
   on(refs.sonarButton, "click", triggerSonar);
+  on(refs.breathChip, "click", startBreathDetection);
   on(refs.logbookButton, "click", toggleLogbook);
   on(refs.logbookClose, "click", closeLogbook);
   refs.rarityFilterButtons.forEach((button) => {
@@ -717,6 +718,12 @@ function handleVisibilityChange() {
 }
 
 async function startBreathDetection() {
+  if (!window.isSecureContext) {
+    refs.breathReadout.textContent = "HTTPS mic";
+    refs.breathChip.classList.add("is-muted");
+    return;
+  }
+
   if (!navigator.mediaDevices?.getUserMedia || ui.breathAnalyser) {
     if (!navigator.mediaDevices?.getUserMedia) {
       refs.breathReadout.textContent = "No mic";
@@ -726,14 +733,9 @@ async function startBreathDetection() {
   }
 
   refs.breathReadout.textContent = "Request";
+  refs.breathChip.classList.remove("is-muted");
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-      },
-    });
+    const stream = await requestBreathStream();
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) {
       refs.breathReadout.textContent = "No audio";
@@ -744,6 +746,9 @@ async function startBreathDetection() {
 
     ui.breathStream = stream;
     ui.breathContext = new AudioContextClass();
+    if (ui.breathContext.state === "suspended") {
+      await ui.breathContext.resume();
+    }
     const source = ui.breathContext.createMediaStreamSource(stream);
     ui.breathAnalyser = ui.breathContext.createAnalyser();
     ui.breathAnalyser.fftSize = 1024;
@@ -755,8 +760,25 @@ async function startBreathDetection() {
     refs.breathChip.classList.add("is-listening");
     tickBreathDetection(0);
   } catch (error) {
-    refs.breathReadout.textContent = "Mic off";
+    refs.breathReadout.textContent = error?.name === "NotAllowedError" ? "Mic blocked" : "Tap retry";
     refs.breathChip.classList.add("is-muted");
+  }
+}
+
+async function requestBreathStream() {
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+  } catch (error) {
+    if (error?.name === "NotAllowedError") {
+      throw error;
+    }
+    return navigator.mediaDevices.getUserMedia({ audio: true });
   }
 }
 
@@ -1060,9 +1082,15 @@ function enableHydrophoneAudio() {
 
 function resumeAudioSystems() {
   if (ui.hydrophoneContext?.state === "suspended") {
-    ui.hydrophoneContext.resume().catch(() => {
-      state.audioEnabled = false;
-    });
+    ui.hydrophoneContext
+      .resume()
+      .then(() => {
+        applyAmbientAudioProfile(zoneData[state.currentZone]?.id);
+        startHydrophoneLoop();
+      })
+      .catch(() => {
+        state.audioEnabled = false;
+      });
   }
 }
 
@@ -1137,6 +1165,7 @@ function startHydrophoneLoop() {
     return;
   }
   if (ui.hydrophoneContext.state === "suspended") {
+    resumeAudioSystems();
     return;
   }
   scheduleHydrophoneClick(400);
