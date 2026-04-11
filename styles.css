@@ -291,31 +291,32 @@ button {
 
 .intro-screen__creature--dolphin {
   top: 18%;
-  left: -18rem;
-  width: clamp(10rem, 22vw, 22rem);
-  animation: intro-swim-right 24s ease-in-out -8s infinite;
+  right: -22rem;
+  width: clamp(9rem, 20vw, 20rem);
+  opacity: 0.22;
+  animation: intro-swim-left-distant 30s ease-in-out -14s infinite;
 }
 
 .intro-screen__creature--turtle {
-  right: -13rem;
-  bottom: 13%;
-  width: clamp(8rem, 17vw, 17rem);
-  opacity: 0.22;
-  animation: intro-swim-left 31s ease-in-out -13s infinite;
+  right: -16rem;
+  bottom: 16%;
+  width: clamp(7rem, 15vw, 15rem);
+  opacity: 0.18;
+  animation: intro-swim-left-distant 38s ease-in-out -22s infinite;
 }
 
 .intro-screen__creature--squid {
-  left: -9rem;
-  bottom: 24%;
-  width: clamp(5.5rem, 10vw, 10rem);
-  opacity: 0.34;
+  right: 18%;
+  bottom: 22%;
+  width: clamp(4.8rem, 8vw, 8rem);
+  opacity: 0.26;
   filter:
     brightness(0.22)
     saturate(0.7)
     sepia(0.25)
     hue-rotate(138deg)
     drop-shadow(0 0 18px rgba(0, 245, 212, 0.22));
-  animation: intro-squid-drift 19s ease-in-out -5s infinite;
+  animation: intro-squid-hover 12s ease-in-out -4s infinite;
 }
 
 .intro-screen__content,
@@ -2736,48 +2737,34 @@ body.is-transitioning #zone-stage {
   }
 }
 
-@keyframes intro-swim-right {
+@keyframes intro-swim-left-distant {
   0% {
     opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(-3deg) scaleX(1);
-  }
-  14%,
-  78% {
-    opacity: 0.28;
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(calc(100vw + 34rem), 5vh, 0) rotate(2deg) scaleX(1);
-  }
-}
-
-@keyframes intro-swim-left {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(3deg) scaleX(-1);
+    transform: translate3d(0, 0, 0) rotate(2deg);
   }
   18%,
   76% {
-    opacity: 0.22;
+    opacity: 0.24;
   }
   100% {
     opacity: 0;
-    transform: translate3d(calc(-100vw - 28rem), -4vh, 0) rotate(-2deg) scaleX(-1);
+    transform: translate3d(calc(-100vw - 36rem), -4vh, 0) rotate(-2deg);
   }
 }
 
-@keyframes intro-squid-drift {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(-4deg);
-  }
-  16%,
-  72% {
-    opacity: 0.34;
-  }
+@keyframes intro-squid-hover {
+  0%,
   100% {
-    opacity: 0;
-    transform: translate3d(calc(100vw + 18rem), -6vh, 0) rotate(4deg);
+    opacity: 0.18;
+    transform: translate3d(0, 0, 0) rotate(-5deg) scale(0.94);
+  }
+  45% {
+    opacity: 0.32;
+    transform: translate3d(-1.8vw, -2.2vh, 0) rotate(4deg) scale(1.03);
+  }
+  70% {
+    opacity: 0.24;
+    transform: translate3d(-2.8vw, 0.6vh, 0) rotate(-2deg) scale(0.98);
   }
 }
 
